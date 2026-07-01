@@ -4,148 +4,151 @@ import psycopg2
 from psycopg2.extras import DictCursor
 from datetime import datetime
 import io
-import base64
+import plotly.graph_objects as go
 
-# 1. إعداد الصفحة بنسق عريض
-st.set_page_config(page_title="إستبرق للوجستيات | نظام الـ ERP", layout="wide", initial_sidebar_state="expanded")
+# ----------------- 1. إعدادات المنظومة الرسمية -----------------
+st.set_page_config(page_title="إستبرق الدولية - منظومة إدارة الشحنات والمالية", layout="wide", initial_sidebar_state="expanded")
 
-# 2. حزمة CSS أساسية نظيفة لواجهة المستخدم فقط (الطباعة أصبحت معزولة تماماً)
+# ----------------- 2. حزمة التنسيق المتقدم والطباعة العمودية الممتدة A4 -----------------
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
-html, body, [data-testid="stSidebar"] { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; background-color: #f5f6fa; }
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
+html, body, [data-testid="stSidebar"] { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; background-color: #f8f9fa; }
 .stHeading, .stMarkdown, p, div, label, span { text-align: right; direction: rtl; }
-div.stButton > button:first-child { background-color: #1e4620; color:white; font-weight: 600; width: 100%; border-radius: 8px; height: 48px; border: none; transition: 0.3s; }
-div.stButton > button:hover { background-color: #2e7d32; }
-.kpi-card { background: #fff; padding: 20px; border-radius: 10px; border-top: 5px solid #1e4620; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-.kpi-card h5 { color: #555; font-size: 15px; margin-bottom: 10px; }
-.kpi-card h2 { color: #1e4620; font-size: 24px; margin: 0; }
-table.ui-table { width: 100%; border-collapse: collapse; direction: rtl; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-table.ui-table th { background-color: #1e4620; color: white; padding: 12px; font-size: 14px; border: 1px solid #ddd; white-space: nowrap; }
-table.ui-table td { padding: 10px; font-size: 14px; border: 1px solid #ddd; color: #222; }
-table.ui-table tr:nth-child(even) { background-color: #f9f9f9; }
+
+/* بطاقات المؤشرات المالية والتحليلات KPI Cards */
+.analytics-container { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 25px; direction: rtl; }
+.analytics-card { flex: 1; min-width: 240px; background: #ffffff; padding: 24px; border-radius: 8px; border-top: 4px solid #1e4620; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+.analytics-card h4 { margin: 0 0 10px 0; color: #7f8c8d; font-size: 14px; font-weight: 600; }
+.analytics-card p { margin: 0; font-size: 24px; font-weight: 700; color: #1e4620; }
+
+/* 📊 جداول البيانات الجمركية المفرودة RTL على الشاشة */
+.enterprise-table-container { width: 100%; overflow-x: auto; direction: rtl; margin: 20px 0; border-radius: 8px; border: 1px solid #e2e8f0; background: #ffffff; }
+table.corporate-data-table { width: 100%; border-collapse: collapse; direction: rtl; text-align: right; }
+table.corporate-data-table th { background-color: #1e4620; color: #ffffff; padding: 14px 18px; font-weight: 600; font-size: 14px; border-bottom: 2px solid #143316; white-space: nowrap; text-align: right; }
+table.corporate-data-table td { padding: 12px 18px; text-align: right; border-bottom: 1px solid #edf2f7; color: #2d3748; font-size: 14px; font-weight: 500; white-space: nowrap; }
+table.corporate-data-table tr:nth-child(even) { background-color: #f7fafc; }
+table.corporate-data-table tr:hover { background-color: #f0f4f1; }
+
+/* 📜 وثيقة كشف الحساب المعتمدة الجاهزة للطباعة العمودية لعدة صفحات دون انقطاع */
+.official-invoice-document { background-color: #ffffff !important; padding: 40px; border: 1px solid #1e4620; border-radius: 6px; direction: rtl; text-align: right; margin-top: 30px; color: #000000 !important; }
+.invoice-corporate-header { text-align: center; border-bottom: 3px double #1e4620; padding-bottom: 15px; margin-bottom: 25px; }
+.invoice-corporate-header h2 { color: #1e4620 !important; font-weight: 700; margin: 0; font-size: 24px; text-align: center; }
+.invoice-meta-data { width: 100%; margin-bottom: 20px; font-size: 14px; color: #000000 !important; }
+.invoice-meta-data td { padding: 5px; border: none !important; }
+
+table.invoice-records-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; color: #000000 !important; }
+table.invoice-records-table th { background-color: #f2f2f2 !important; color: #1e4620 !important; border: 1px solid #000000 !important; padding: 11px; font-weight: bold; text-align: right; }
+table.invoice-records-table td { border: 1px solid #000000 !important; padding: 11px; text-align: right; color: #000000 !important; font-weight: 500; }
+
+.invoice-summary-box { margin-top: 30px; padding: 18px; background-color: #fcfcf9; border: 1px solid #000000; border-radius: 6px; color: #000000 !important; }
+.invoice-signatures-block { margin-top: 60px; width: 100%; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #000000 !important; }
+
+/* 🖨️ محرك الرقابة الجمركي للطباعة العمودية الصارمة: تحرير تدفق الصفحات وحظر شوائب الموقع */
+@media print {
+    @page { size: A4 portrait; margin: 20mm 15mm; }
+    header, footer, [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stElementToolbar"],
+    div.stButton, div.stForm, div.stSelectbox, div.stMultiSelect, div.stRadio, .stExpander, .print-instruction, .enterprise-table-container, .analytics-container, .no-print {
+        display: none !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    [data-testid="stAppViewContainer"], .main, .block-container, [data-testid="stVerticalBlock"] {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        display: block !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+    .official-invoice-document {
+        display: block !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        direction: rtl !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+    table.invoice-records-table { page-break-inside: auto !important; width: 100% !important; }
+    table.invoice-records-table tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+    thead { display: table-header-group !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
-# 3. الاتصال بقاعدة البيانات
+# ----------------- 3. إدارة الاتصال بقاعدة البيانات السحابية -----------------
 def get_db_connection():
     try:
         db_url = st.secrets["postgres"]["url"]
         return psycopg2.connect(db_url, cursor_factory=DictCursor)
     except Exception as e:
-        st.error(f"🔴 خطأ في الاتصال بقاعدة البيانات: {e}")
+        st.error(f"🔴 خطأ في الاتصال بقاعدة البيانات السحابية: {e}")
         st.stop()
 
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS customers (id SERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE)')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS shipments (id SERIAL PRIMARY KEY, customer_name TEXT, container_number TEXT, bl_number TEXT, shipment_date TEXT, do_number TEXT, do_value_lyd DOUBLE PRECISION, agency_freight_usd DOUBLE PRECISION, final_freight_usd DOUBLE PRECISION)''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS receipts (id SERIAL PRIMARY KEY, customer_name TEXT, amount DOUBLE PRECISION, currency TEXT, receipt_date TEXT, notes TEXT)''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shipments (
+            id SERIAL PRIMARY KEY, customer_name TEXT, container_number TEXT,
+            bl_number TEXT, shipment_date TEXT, do_number TEXT, do_value_lyd DOUBLE PRECISION,
+            agency_freight_usd DOUBLE PRECISION, final_freight_usd DOUBLE PRECISION
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS receipts (
+            id SERIAL PRIMARY KEY, customer_name TEXT, amount DOUBLE PRECISION,
+            currency TEXT, receipt_date TEXT, notes TEXT
+        )
+    ''')
     conn.commit()
     cursor.close(); conn.close()
 
 init_db()
 
-# 4. دوال التصدير والطباعة المعزولة
+def safe_float(val):
+    if pd.isnull(val): return 0.0
+    try: return float(val)
+    except: return 0.0
+
 def to_excel(df):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Report')
+        df.to_excel(writer, index=False, sheet_name='كشف الحساب الجاري')
     return output.getvalue()
 
-def generate_isolated_print_html(df, report_type, customer_name, total_lyd, total_usd, show_profit=False):
-    """هذا المحرك يولد صفحة HTML نقية معزولة تطبع أوتوماتيكياً بنظام A4 المتعدد الصفحات"""
-    # بناء صفوف الجدول
-    rows_html = ""
-    if report_type == "summary":
-        th_html = "<th>اسم الزبون</th><th>عدد الحاويات</th><th>المطلوب (د.ل)</th><th>المدفوع (د.ل)</th><th>المتبقي (د.ل)</th><th>الشحن ($)</th><th>المدفوع ($)</th><th>المتبقي ($)</th>"
-        for _, r in df.iterrows():
-            rows_html += f"<tr><td>{r['اسم الزبون']}</td><td>{r['عدد الحاويات']}</td><td>{r['المطلوب (د.ل)']:,.2f}</td><td>{r['المدفوع (د.ل)']:,.2f}</td><td>{r['المتبقي (د.ل)']:,.2f}</td><td>${r['الشحن ($)']:,.2f}</td><td>${r['المدفوع ($)']:,.2f}</td><td>${r['المتبقي ($)']:,.2f}</td></tr>"
-    else:
-        th_html = "<th>اسم الزبون</th><th>رقم البوليصة</th><th>رقم الحاوية</th><th>التاريخ</th><th>أمر التسليم</th><th>قيمة أ.ت (د.ل)</th><th>الشحن النهائي ($)</th>"
-        if show_profit: th_html += "<th>شحن الوكالة</th><th>الربح</th>"
-        for _, r in df.iterrows():
-            rows_html += f"<tr><td>{r['customer_name']}</td><td>{r['bl_number']}</td><td>{r['container_number']}</td><td>{r['shipment_date']}</td><td>{r['do_number']}</td><td>{r['do_value_lyd']:,.2f}</td><td>${r['final_freight_usd']:,.2f}</td>"
-            if show_profit: rows_html += f"<td>${r['agency_freight_usd']:,.2f}</td><td>${r['profit_usd']:,.2f}</td>"
-            rows_html += "</tr>"
+# دالة رندرة جداول الـ HTML المفرودة RTL لمنع مشاكل وانكماش الـ Canvas الافتراضي
+def render_enterprise_html_grid(df, show_internal_profit=False):
+    headers = ["اسم الزبون", "رقم البوليصة", "رقم الحاوية", "التاريخ", "رقم أمر التسليم", "قيمة أمر التسليم (د.ل)", "الشحن النهائي ($)"]
+    if show_internal_profit:
+        headers.extend(["شحن الوكالة ($)", "صافي الربح ($)"])
+        
+    th_html = "".join(f"<th>{h}</th>" for h in headers)
+    tr_html = ""
+    for _, row in df.iterrows():
+        tr_html += "<tr>"
+        tr_html += f"<td>{row['customer_name']}</td>"
+        tr_html += f"<td>{row['bl_number']}</td>"
+        tr_html += f"<td>{row['container_number']}</td>"
+        tr_html += f"<td>{row['shipment_date']}</td>"
+        tr_html += f"<td>{row['do_number']}</td>"
+        tr_html += f"<td>{row['do_value_lyd']:,.2f} د.ل</td>"
+        tr_html += f"<td>${row['final_freight_usd']:,.2f}</td>"
+        if show_internal_profit:
+            tr_html += f"<td>${row['agency_freight_usd']:,.2f}</td>"
+            tr_html += f"<td>${row['profit_usd']:,.2f}</td>"
+        tr_html += "</tr>"
+        
+    st.markdown(f'<div class="enterprise-table-container"><table class="corporate-data-table"><thead><tr>{th_html}</tr></thead><tbody>{tr_html}</tbody></table></div>', unsafe_allow_html=True)
 
-    doc_title = "كشف أرصاد مالي إجمالي" if report_type == "summary" else "كشف سجل حاويات تفصيلي"
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="ar" dir="rtl">
-    <head>
-        <meta charset="UTF-8">
-        <title>طباعة تقرير - إستبرق</title>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-            body {{ font-family: 'Cairo', sans-serif; background-color: white; color: black; padding: 20px; font-size: 14px; margin: 0; }}
-            .header {{ text-align: center; border-bottom: 3px double #1e4620; padding-bottom: 10px; margin-bottom: 20px; }}
-            .header h1 {{ color: #1e4620; margin: 0; font-size: 24px; }}
-            .header p {{ margin: 5px 0 0 0; color: #555; }}
-            .info-table {{ width: 100%; margin-bottom: 20px; }}
-            .info-table td {{ border: none; padding: 5px; }}
-            table.data-table {{ width: 100%; border-collapse: collapse; margin-bottom: 30px; }}
-            table.data-table th, table.data-table td {{ border: 1px solid #000; padding: 8px; text-align: right; }}
-            table.data-table th {{ background-color: #f2f2f2; -webkit-print-color-adjust: exact; }}
-            .totals {{ border: 2px solid #000; padding: 15px; background-color: #fafafa; -webkit-print-color-adjust: exact; page-break-inside: avoid; }}
-            .sigs {{ display: flex; justify-content: space-between; margin-top: 50px; font-weight: bold; page-break-inside: avoid; }}
-            @media print {{
-                @page {{ size: A4 portrait; margin: 15mm; }}
-                table.data-table {{ page-break-inside: auto; }}
-                tr {{ page-break-inside: avoid; page-break-after: auto; }}
-                thead {{ display: table-header-group; }}
-            }}
-        </style>
-    </head>
-    <body onload="window.print()">
-        <div class="header">
-            <h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية</h1>
-            <p>مصراتة - ليبيا | الحسابات المركزية</p>
-        </div>
-        <table class="info-table">
-            <tr>
-                <td><b>الحساب الجاري:</b> {customer_name}</td>
-                <td style="text-align: left;"><b>تاريخ الاستخراج:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</td>
-            </tr>
-            <tr>
-                <td><b>نوع المستند:</b> {doc_title}</td>
-                <td style="text-align: left;"><b>عدد السجلات المدرجة:</b> {len(df)} سجل</td>
-            </tr>
-        </table>
-        <table class="data-table">
-            <thead><tr>{th_html}</tr></thead>
-            <tbody>{rows_html}</tbody>
-        </table>
-        <div class="totals">
-            <div style="margin-bottom: 8px;"><b>إجمالي قيمة أوامر التسليم المستحقة:</b> {total_lyd:,.2f} دينار ليبي</div>
-            <div><b>إجمالي قيمة نولون الشحن المستحقة:</b> ${total_usd:,.2f} دولار أمريكي</div>
-        </div>
-        <div class="sigs">
-            <div>توقيع الحسابات: ........................</div>
-            <div>ختم الشركة: ........................</div>
-        </div>
-    </body>
-    </html>
-    """
-    return html_content
-
-def create_print_button(html_content):
-    """تحويل الـ HTML إلى رابط Base64 يفتح في نافذة جديدة للطباعة النظيفة"""
-    b64 = base64.b64encode(html_content.encode('utf-8')).decode('utf-8')
-    href = f'''
-    <a href="data:text/html;charset=utf-8;base64,{b64}" target="_blank" style="text-decoration: none;">
-        <div style="background-color: #d32f2f; color: white; padding: 12px; border-radius: 8px; text-align: center; font-family: 'Cairo', sans-serif; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">
-            🖨️ طباعة التقرير (نافذة PDF رسمية A4)
-        </div>
-    </a><br>
-    '''
-    return href
-
-# ----------------- القائمة الجانبية -----------------
+# ----------------- القائمة الجانبية الاحترافية -----------------
 st.sidebar.markdown("<h2 style='text-align: center; color: #1e4620; font-weight:700;'>🚢 إستبرق الدولية</h2>", unsafe_allow_html=True)
-st.sidebar.markdown("<p style='text-align: center; color: #4caf50;'>🌐 نظام الإدارة والرقابة المالية</p>", unsafe_allow_html=True)
+st.sidebar.markdown("<p style='text-align: center; color: #4caf50;'>🌐 نظام الرقابة والتحليل المالي</p>", unsafe_allow_html=True)
 st.sidebar.write("---")
 menu = st.sidebar.radio("قائمة تحكم المنظومة:", [
     "📊 لوحة التحكم والتقارير", 
@@ -159,9 +162,15 @@ menu = st.sidebar.radio("قائمة تحكم المنظومة:", [
     "🗑️ مسح البيانات دفعة واحدة"
 ])
 
-# ==================== 📊 1. لوحة التحكم والتقارير (مبنية من الصفر للمثالية) ====================
+# ==================== 📊 لوحة التحكم والتقارير المحدثة بالكامل من الصفر ====================
 if menu == "📊 لوحة التحكم والتقارير":
-    st.title("📊 مركز التقارير وإدارة الحسابات")
+    st.title("📊 مركز إدارة ومراقبة الأداء المالي اللوجستي")
+    
+    st.markdown("""
+    <div class='print-instruction' style='background-color: #e8f5e9; padding: 15px; border-right: 5px solid #2e7d32; border-radius: 8px; margin-bottom: 15px;'>
+    💡 <b>إرشادات الطباعة الرسمية:</b> قم بتحديد الفلاتر المطلوبة بالأسفل، ثم اضغط على زر <b>"🖨️ توليد مستند كشف الحساب للطباعة"</b>، ثم اضغط على <b>Ctrl + P</b> من لوحة المفاتيح. سيقوم النظام أوتوماتيكياً بتقسيم الجداول الممتدة على عدة صفحات عمودية A4 Portrait دون أي نقص أو تشويه.
+    </div>
+    """, unsafe_allow_html=True)
     
     conn = get_db_connection()
     customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
@@ -170,161 +179,166 @@ if menu == "📊 لوحة التحكم والتقارير":
     conn.close()
     
     if customers_df.empty:
-        st.warning("لا توجد بيانات مسجلة.")
+        st.warning("لا توجد بيانات مسجلة في قاعدة البيانات حالياً.")
     else:
-        # 1. لوحة الفلاتر السريعة (تصفية بالزبون وتحديد نوع التقرير)
-        with st.container():
-            st.markdown("### ⚙️ محرك استخراج الكشوفات:")
-            c1, c2, c3 = st.columns(3)
-            with c1: filter_scope = st.radio("نطاق الكشف:", ["كل الزبائن", "زبون محدد"])
-            with c2: filter_type = st.radio("نوع الكشف:", ["إجمالي (أرصاد)", "تفصيلي (حاويات)"])
-            with c3: show_profit = st.checkbox("عرض أرباح الوكالة (في التفصيلي)")
-            
-            target_customer = "كافة عملاء المنظومة"
-            if filter_scope == "زبون محدد":
-                target_customer = st.selectbox("🎯 حدد الزبون:", customers_df['name'].tolist())
+        # حساب وعرض الكتل المالية الكلية للشركة Dashboard KPIs
+        t_cont = len(shipments_all)
+        t_lyd = shipments_all['do_value_lyd'].sum() if not shipments_all.empty else 0.0
+        t_usd = shipments_all['final_freight_usd'].sum() if not shipments_all.empty else 0.0
+        
+        st.markdown(f"""
+        <div class="analytics-container">
+            <div class="analytics-card"><h4>📦 حجم الشحنات والحاويات المعالجة</h4><p>{t_cont} شحنة جارية</p></div>
+            <div class="analytics-card"><h4>💵 إجمالي ذمم أوامر التسليم</h4><p>{t_lyd:,.2f} د.ل</p></div>
+            <div class="analytics-card"><h4>💵 إجمالي مطلوب نولون الشحن الدولي</h4><p>${t_usd:,.2f}</p></div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # محرك الفرز والاستخراج المطور
+        with St_expander if 'St_expander' in locals() else st.expander("⚙️ محرك تحديد نطاق وهيكلية كشوفات الحساب", expanded=True):
+            c_filter1, f_col2, f_col3 = st.columns(3)
+            with c_filter1:
+                report_scope = st.radio("1. نطاق البحث المالي:", ["كافة الحسابات الكلية", "حساب عميل محدد"], horizontal=True)
+            with f_col2:
+                report_structure = st.radio("2. هيكلية بيان المستند:", ["كشف مالي إجمالي مجمع", "تقرير سجل تفصيلي"], horizontal=True)
+            with f_col3:
+                display_profit = st.checkbox("إظهار قيم التكلفة الداخية وصافي الأرباح", value=False)
+                
+            st.write("---")
+            if report_scope == "حساب عميل محدد":
+                target_customer = st.selectbox("🎯 اختر اسم حساب الزبون المستهدف بالفرز:", customers_df['name'].tolist())
+            else:
+                target_customer = "الكل"
 
         st.write("---")
+
+        df_export_target = pd.DataFrame()
         
-        df_display = pd.DataFrame()
-        html_report_table = ""
-        total_lyd = 0.0
-        total_usd = 0.0
-        report_mode = "summary"
-        
-        # 2. معالجة البيانات حسب اختيار المستخدم
-        if filter_scope == "كل الزبائن":
-            if filter_type == "إجمالي (أرصاد)":
-                report_mode = "summary"
-                st.subheader("📋 كشف ملخص الأرصاد لجميع الزبائن")
-                sum_data = []
+        if report_scope == "كافة الحسابات الكلية":
+            if report_structure == "كشف مالي إجمالي مجمع":
+                st.subheader("📋 كشف أرصاد الموقف المالي العام لكافة عملاء الشركة")
+                global_summary = []
                 for cust in customers_df['name']:
-                    cs = shipments_all[shipments_all['customer_name'] == cust]
-                    cr = receipts_all[receipts_all['customer_name'] == cust]
-                    r_l = cs['do_value_lyd'].sum() if not cs.empty else 0.0
-                    r_u = cs['final_freight_usd'].sum() if not cs.empty else 0.0
-                    p_l = cr[cr['currency'] == 'دينار ليبي LYD']['amount'].sum() if not cr.empty else 0.0
-                    p_u = cr[cr['currency'] == 'دولار أمريكي USD']['amount'].sum() if not cr.empty else 0.0
-                    sum_data.append({
-                        "اسم الزبون": cust, "عدد الحاويات": len(cs), "المطلوب (د.ل)": r_l, "المدفوع (د.ل)": p_l, "المتبقي (د.ل)": r_l - p_l, "الشحن ($)": r_u, "المدفوع ($)": p_u, "المتبقي ($)": r_u - p_u
+                    cust_s = shipments_all[shipments_all['customer_name'] == cust]
+                    cust_r = receipts_all[receipts_all['customer_name'] == cust]
+                    r_lyd = cust_s['do_value_lyd'].sum() if not cust_s.empty else 0.0
+                    r_usd = cust_s['final_freight_usd'].sum() if not cust_s.empty else 0.0
+                    p_lyd = cust_r[cust_r['currency'] == 'دينار ليبي LYD']['amount'].sum() if not cust_r.empty else 0.0
+                    p_usd = cust_r[cust_r['currency'] == 'دولار أمريكي USD']['amount'].sum() if not cust_r.empty else 0.0
+                    
+                    global_summary.append({
+                        "customer_name": cust, "total_containers": len(cust_s), 
+                        "required_lyd": r_lyd, "paid_lyd": p_lyd, "remaining_lyd": r_lyd - p_lyd, 
+                        "required_usd": r_usd, "paid_usd": p_usd, "remaining_usd": r_usd - p_usd
                     })
-                df_display = pd.DataFrame(sum_data)
-                total_lyd = df_display['المطلوب (د.ل)'].sum()
-                total_usd = df_display['الشحن ($)'].sum()
+                df_export_target = pd.DataFrame(global_summary)
                 
-                # بناء جدول واجهة العرض
-                th = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "الحاويات", "المطلوب (د.ل)", "المدفوع (د.ل)", "المتبقي (د.ل)", "الشحن ($)", "المدفوع ($)", "المتبقي ($)"])
-                tr = "".join(f"<tr><td>{r['اسم الزبون']}</td><td>{r['عدد الحاويات']}</td><td>{r['المطلوب (د.ل)']:,.2f}</td><td>{r['المدفوع (د.ل)']:,.2f}</td><td style='color:red;'>{r['المتبقي (د.ل)']:,.2f}</td><td>${r['الشحن ($)']:,.2f}</td><td>${r['المدفوع ($)']:,.2f}</td><td style='color:red;'>${r['المتبقي ($)']:,.2f}</td></tr>" for _, r in df_display.iterrows())
-                html_report_table = f"<div style='overflow-x:auto;'><table class='ui-table'><thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table></div>"
-
+                # رندرة جدول الإجمالي العام الموحد والمحمي تماماً ضد الـ KeyError
+                th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "الحاويات", "المطلوب (د.ل)", "المدفوع (د.ل)", "المتبقي (د.ل)", "الشحن ($)", "المدفوع ($)", "المتبقي ($)"])
+                tr_html = ""
+                for _, r in df_export_target.iterrows():
+                    tr_html += f"<tr><td>{r['customer_name']}</td><td>{r['total_containers']}</td><td>{r['required_lyd']:,.2f} د.ل</td><td>{r['paid_lyd']:,.2f} د.ل</td><td style='color:red; font-weight:bold;'>{r['remaining_lyd']:,.2f} د.ل</td><td>${r['required_usd']:,.2f}</td><td>${r['paid_usd']:,.2f}</td><td style='color:red; font-weight:bold;'>${r['remaining_usd']:,.2f}</td></tr>"
+                st.markdown(f'<div class="enterprise-table-container"><table class="corporate-data-table"><thead><tr>{th_html}</tr></thead><tbody>{tr_html}</tbody></table></div>', unsafe_allow_html=True)
+                
+                # استخدام مكتبة Plotly المتطورة للتحليلات الرسومية
+                fig = go.Figure()
+                fig.add_trace(go.Bar(x=df_export_target['customer_name'], y=df_export_target['remaining_lyd'], name='المتبقي بالدينار د.ل', marker_color='#1e4620'))
+                fig.update_layout(title='📈 ميزان الأرصاد المعلقة والذمم المالية الجارية للزبائن أونلاين', template='plotly_white', font=dict(family="Cairo"))
+                st.plotly_chart(fig, use_container_width=True)
             else:
-                report_mode = "detailed"
-                st.subheader("📋 كشف الحاويات التفصيلي الشامل لكافة الزبائن")
-                df_display = shipments_all.copy()
-                df_display['profit_usd'] = df_display['final_freight_usd'] - df_display['agency_freight_usd']
-                total_lyd = df_display['do_value_lyd'].sum()
-                total_usd = df_display['final_freight_usd'].sum()
-                
-                h_list = ["اسم الزبون", "رقم البوليصة", "رقم الحاوية", "التاريخ", "أمر التسليم", "قيمة أ.ت", "الشحن النهائي"]
-                if show_profit: h_list.extend(["شحن الوكالة", "صافي الربح"])
-                th = "".join(f"<th>{h}</th>" for h in h_list)
-                tr = ""
-                for _, r in df_display.iterrows():
-                    tr += f"<tr><td>{r['customer_name']}</td><td>{r['bl_number']}</td><td>{r['container_number']}</td><td>{r['shipment_date']}</td><td>{r['do_number']}</td><td>{r['do_value_lyd']:,.2f}</td><td>${r['final_freight_usd']:,.2f}</td>"
-                    if show_profit: tr += f"<td>${r['agency_freight_usd']:,.2f}</td><td>${r['profit_usd']:,.2f}</td>"
-                    tr += "</tr>"
-                html_report_table = f"<div style='overflow-x:auto;'><table class='ui-table'><thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table></div>"
-
+                st.subheader("📋 كشف سجل الشحنات التفصيلي الشامل لكافة الزبائن")
+                df_export_target = shipments_all.copy()
+                df_export_target['profit_usd'] = df_export_target['final_freight_usd'] - df_export_target['agency_freight_usd']
+                render_enterprise_html_grid(df_export_target, show_internal_profit=display_profit)
         else:
-            # تصفية زبون محدد
-            dfs = shipments_all[shipments_all['customer_name'] == target_customer].copy()
-            dfr = receipts_all[receipts_all['customer_name'] == target_customer]
-            r_l = dfs['do_value_lyd'].sum() if not dfs.empty else 0.0
-            r_u = dfs['final_freight_usd'].sum() if not dfs.empty else 0.0
-            p_l = dfr[dfr['currency'] == 'دينار ليبي LYD']['amount'].sum() if not dfr.empty else 0.0
-            p_u = dfr[dfr['currency'] == 'دولار أمريكي USD']['amount'].sum() if not dfr.empty else 0.0
+            # فرز حساب عميل محدد فردي
+            df_cust_s = shipments_all[shipments_all['customer_name'] == target_customer].copy()
+            df_cust_r = receipts_all[receipts_all['customer_name'] == target_customer]
+            r_lyd = df_cust_s['do_value_lyd'].sum() if not df_cust_s.empty else 0.0
+            r_usd = df_cust_s['final_freight_usd'].sum() if not df_cust_s.empty else 0.0
+            p_lyd = df_cust_r[df_cust_r['currency'] == 'دينار ليبي LYD']['amount'].sum() if not df_cust_r.empty else 0.0
+            p_usd = df_cust_r[df_cust_r['currency'] == 'دولار أمريكي USD']['amount'].sum() if not df_cust_r.empty else 0.0
             
-            # كروت داشبورد الزبون
-            st.markdown(f"""
-            <div style="display:flex; gap:20px; direction:rtl;">
-                <div class="kpi-card" style="flex:1;"><h5>ذمم أوامر التسليم المستحقة</h5><h2>{r_l - p_l:,.2f} د.ل</h2><p style="font-size:12px; color:#666;">المطلوب: {r_l:,.2f} | المدفوع: {p_l:,.2f}</p></div>
-                <div class="kpi-card" style="flex:1;"><h5>نولون الشحن الدولي المستحق</h5><h2>${r_u - p_u:,.2f}</h2><p style="font-size:12px; color:#666;">المطلوب: ${r_u:,.2f} | المدفوع: ${p_u:,.2f}</p></div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            if filter_type == "إجمالي (أرصاد)":
-                report_mode = "summary"
-                st.subheader(f"📋 الموقف المالي لحساب: {target_customer}")
-                df_display = pd.DataFrame([{"اسم الزبون": target_customer, "عدد الحاويات": len(dfs), "المطلوب (د.ل)": r_l, "المدفوع (د.ل)": p_l, "المتبقي (د.ل)": r_l-p_l, "الشحن ($)": r_u, "المدفوع ($)": p_u, "المتبقي ($)": r_u-p_u}])
-                total_lyd = r_l
-                total_usd = r_u
-                
-                th = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "الحاويات", "المطلوب (د.ل)", "المدفوع (د.ل)", "المتبقي (د.ل)", "الشحن ($)", "المدفوع ($)", "المتبقي ($)"])
-                tr = "".join(f"<tr><td>{r['اسم الزبون']}</td><td>{r['عدد الحاويات']}</td><td>{r['المطلوب (د.ل)']:,.2f}</td><td>{r['المدفوع (د.ل)']:,.2f}</td><td style='color:red;'>{r['المتبقي (د.ل)']:,.2f}</td><td>${r['الشحن ($)']:,.2f}</td><td>${r['المدفوع ($)']:,.2f}</td><td style='color:red;'>${r['المتبقي ($)']:,.2f}</td></tr>" for _, r in df_display.iterrows())
-                html_report_table = f"<div style='overflow-x:auto;'><table class='ui-table'><thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table></div>"
+            if report_structure == "كشف مالي إجمالي مجمع":
+                st.subheader(f"📋 الموقف والملخص المالي الإجمالي لحساب: {target_customer}")
+                k1, k2 = st.columns(2)
+                with k1:
+                    st.markdown(f"""<div class='metric-card' style='border-right-color: #2196f3;'>
+                        <h5>💵 ذمم حساب أوامر التسليم (دينار ليبي):</h5>
+                        <p>إجمالي المطلوب: <b>{r_lyd:,.2f} د.ل</b> | المدفوع: <b style='color:green;'>{p_lyd:,.2f} د.ل</b></p>
+                        <p>المتبقي بذمته جاري: <b style='color:red;'>{r_lyd - p_lyd:,.2f} د.ل</b></p>
+                    </div>""", unsafe_allow_html=True)
+                with k2:
+                    st.markdown(f"""<div class='metric-card' style='border-right-color: #4caf50;'>
+                        <h5>💵 مطلوب حساب نولون الشحن الدولي (دولار أمريكي):</h5>
+                        <p>إجمالي المطلوب: <b>${r_usd:,.2f}</b> | المدفوع: <b style='color:green;'>${p_usd:,.2f}</b></p>
+                        <p>المتبقي بذمته جاري: <b style='color:red;'>${r_usd - p_usd:,.2f}</b></p>
+                    </div>""", unsafe_allow_html=True)
+                df_export_target = pd.DataFrame([{"اسم الزبون": target_customer, "المطلوب (د.ل)": r_lyd, "المدفوع (د.ل)": p_lyd, "المتبقي (د.ل)": r_lyd-p_lyd, "الشحن ($)": r_usd, "المدفوع ($)": p_usd, "المتبقي ($)": r_usd-p_usd}])
             else:
-                report_mode = "detailed"
-                st.subheader(f"📋 سجل حاويات الزبون: {target_customer}")
-                dfs['profit_usd'] = dfs['final_freight_usd'] - dfs['agency_freight_usd']
-                df_display = dfs.copy()
-                total_lyd = r_l
-                total_usd = r_u
-                
-                h_list = ["اسم الزبون", "رقم البوليصة", "رقم الحاوية", "التاريخ", "أمر التسليم", "قيمة أ.ت", "الشحن النهائي"]
-                if show_profit: h_list.extend(["شحن الوكالة", "صافي الربح"])
-                th = "".join(f"<th>{h}</th>" for h in h_list)
-                tr = ""
-                for _, r in df_display.iterrows():
-                    tr += f"<tr><td>{r['customer_name']}</td><td>{r['bl_number']}</td><td>{r['container_number']}</td><td>{r['shipment_date']}</td><td>{r['do_number']}</td><td>{r['do_value_lyd']:,.2f}</td><td>${r['final_freight_usd']:,.2f}</td>"
-                    if show_profit: tr += f"<td>${r['agency_freight_usd']:,.2f}</td><td>${r['profit_usd']:,.2f}</td>"
-                    tr += "</tr>"
-                html_report_table = f"<div style='overflow-x:auto;'><table class='ui-table'><thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table></div>"
+                st.subheader(f"📋 سجل الحاويات التفصيلي المفتوح لحساب: {target_customer}")
+                df_cust_s['profit_usd'] = df_cust_s['final_freight_usd'] - df_cust_s['agency_freight_usd']
+                df_export_target = df_cust_s.copy()
+                render_enterprise_html_grid(df_export_target, show_internal_profit=display_profit)
 
-        # 3. عرض الجدول على الشاشة
-        st.markdown(html_report_table, unsafe_allow_html=True)
+        # محرك التصدير لملفات Excel الجاهزة والمعتمدة
+        if not df_export_target.empty:
+            st.write("")
+            st.download_button(label="📥 تصدير وتحميل كشف الحساب النشط بصيغة Excel", data=to_excel(df_export_target), file_name=f"istabraq_statement_{datetime.now().strftime('%Y%m%d')}.xlsx")
+
+        # ==================== 🖨️ محرك بناء مستندات الطباعة العمودية المتعددة الصفحات A4 Portrait ====================
+        st.write("---")
+        st.markdown("### 🖨️ محرك توليد وتصديق مستندات كشوفات الحساب الرسمية:")
         
-        # 4. أزرار الأكشن (إكسل + طباعة معزولة)
-        if not df_display.empty:
-            st.write("---")
-            col_btn1, col_btn2 = st.columns(2)
-            with col_btn1:
-                st.download_button(label="📥 تحميل التقرير المعروض بصيغة Excel", data=to_excel(df_display), file_name=f"istabraq_report_{datetime.now().strftime('%Y%m%d')}.xlsx")
-            with col_btn2:
-                # توليد صفحة الطباعة المعزولة وعرض الرابط كزرار
-                print_html = generate_isolated_print_html(df_display, report_mode, target_customer, total_lyd, total_usd, show_profit)
-                st.markdown(create_print_button(print_html), unsafe_allow_html=True)
-                st.markdown("<p style='text-align:center; font-size:13px; color:#666;'>اضغط على الزر الأحمر لفتح الفاتورة في نافذة جديدة نظيفة وجاهزة للطباعة (Ctrl+P) بدون أي قص أو خلل.</p>", unsafe_allow_html=True)
+        btn_print_trigger = st.button("🖨️ توليد واعتماد مستند كشف الحساب للطباعة")
+        
+        if btn_print_trigger:
+            st.success("🎉 تم معالجة وتوليد مستند كشف الحساب بنجاح! اضغط الآن من لوحة المفاتيح على Ctrl + P لبدء الطباعة الفورية المتعددة الصفحات.")
+            
+            # احتساب مجاميع كشف الحساب المستخرج حالياً
+            if report_structure == "كشف مالي إجمالي مجمع" and report_scope == "كافة الحسابات الكلية":
+                p_total_lyd = df_export_target['required_lyd'].sum()
+                p_total_usd = df_export_target['required_usd'].sum()
+                
+                rows_html_p = ""
+                for _, r in df_export_target.iterrows():
+                    rows_html_p += f"<tr><td>{r['customer_name']}</td><td>{r['total_containers']}</td><td>{r['required_lyd']:,.2f} د.ل</td><td>{r['paid_lyd']:,.2f} د.ل</td><td>{r['remaining_lyd']:,.2f} د.ل</td><td>${r['required_usd']:,.2f}</td><td>${r['paid_usd']:,.2f}</td><td>${r['remaining_usd']:,.2f}</td></tr>"
+                    
+                table_headers = "<th>اسم الزبون</th><th>عدد الحاويات</th><th>المطلوب (د.ل)</th><th>المدفوع (د.ل)</th><th>المتبقي (د.ل)</th><th>الشحن ($)</th><th>المدفوع ($)</th><th>المتبقي ($)</th>"
+                doc_type_text = "كشف ميزان الأرصاد الإجمالي لكافة العملاء"
+            else:
+                p_total_lyd = df_export_target['do_value_lyd'].sum()
+                p_total_usd = df_export_target['final_freight_usd'].sum()
+                
+                rows_html_p = ""
+                for _, r in df_export_target.iterrows():
+                    agency_td_p = f"<td>${r['agency_freight_usd']:,.2f}</td>" if display_profit else ""
+                    profit_td_p = f"<td>${r['profit_usd']:,.2f}</td>" if display_profit else ""
+                    rows_html_p += f"<tr><td>{r['customer_name']}</td><td>{r['bl_number']}</td><td>{r['container_number']}</td><td>{r['shipment_date']}</td><td>{r['do_number']}</td><td>{r['do_value_lyd']:,.2f} د.ل</td><td>${r['final_freight_usd']:,.2f}</td>{agency_td_p}{profit_td_p}</tr>"
+                    
+                th_agency_print = "<th>شحن الوكالة</th>" if display_profit else ""
+                th_profit_print = "<th>صافي الربح</th>" if display_profit else ""
+                table_headers = f"<th>اسم الزبون</th><th>رقم البوليصة</th><th>رقم الحاوية</th><th>التاريخ</th><th>رقم أمر التسليم</th><th>قيمة أمر التسليم</th><th>الشحن النهائي</th>{th_agency_print}{th_profit_print}"
+                doc_type_text = "كشف سجل الحاويات التفصيلي المعتمد"
 
-        # 5. لوحة تعديل الحاويات السريعة للزبون المختار (عشان متلغيش الميزة كلياً لكن تنظمها)
-        if filter_scope == "زبون محدد" and not dfs.empty:
-            st.write("---")
-            with st.expander("🛠️ لوحة المعالجة السريعة (تحديث بيانات حاوية ناقصة)"):
-                dfs['edit_label'] = "معرف [" + dfs['id'].astype(str) + "] | بوليصة: " + dfs['bl_number'].astype(str) + " | حاوية: " + dfs['container_number'].astype(str)
-                selected_edit = st.selectbox("اختر الشحنة المراد إكمال بياناتها:", dfs['edit_label'].tolist())
-                if selected_edit:
-                    c_row = dfs[dfs['edit_label'] == selected_edit].iloc[0]
-                    with st.form("quick_edit_form_clean"):
-                        m1, m2, m3 = st.columns(3)
-                        with m1: u_cust = st.text_input("اسم الزبون", value=str(c_row['customer_name']), disabled=True)
-                        with m2: u_cont = st.text_input("الحاوية", value=str(c_row['container_number']))
-                        with m3: u_bl = st.text_input("البوليصة", value=str(c_row['bl_number']))
-                        m4, m5, m6 = st.columns(3)
-                        with m4: u_date = st.text_input("التاريخ", value=str(c_row['shipment_date']))
-                        with m5: u_do_num = st.text_input("أمر التسليم", value=str(c_row['do_number']))
-                        with m6: u_do_val = st.number_input("قيمة أمر التسليم (LYD)", value=float(c_row['do_value_lyd']))
-                        m7, m8 = st.columns(2)
-                        with m7: u_agency = st.number_input("شحن الوكالة (USD)", value=float(c_row['agency_freight_usd']))
-                        with m8: u_final = st.number_input("الشحن النهائي (USD)", value=float(c_row['final_freight_usd']))
-                        if st.form_submit_button("💾 حفظ التعديلات السحابية"):
-                            u_conn = get_db_connection()
-                            u_cursor = u_conn.cursor()
-                            u_cursor.execute('UPDATE shipments SET container_number=%s, bl_number=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s', 
-                                             (u_cont.strip(), u_bl.strip(), u_date.strip(), u_do_num.strip(), u_do_val, u_agency, u_final, int(c_row['id'])))
-                            u_conn.commit(); u_cursor.close(); u_conn.close()
-                            st.success("تم تحديث البيانات بنجاح!")
-                            st.rerun()
+            # قالب الوثيقة الرسمية الصارم والجاهز للتدفق عبر عدد لا نهائي من الصفحات بدون قطع
+            html_document_payload = "<div class='official-print-document'>"
+            html_document_payload += "<div class='document-corporate-header'><h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1><p style='margin:5px 0 0 0; color:#444; font-size:14px;'>مصراتة - ليبيا | قسم الحسابات والرقابة المالية المركزية</p></div>"
+            html_document_payload += "<table class='document-meta-table'>"
+            html_document_payload += f"<tr><td><b>الحساب الجاري المستخرج:</b> {target_customer if report_scope == 'حساب عميل محدد' else 'كافة عملاء الحسابات الكلية'}</td><td style='text-align: left;'><b>تاريخ استخراج الوثيقة:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</td></tr>"
+            html_document_payload += f"<tr><td><b>تصنيف الوثيقة المعتمدة:</b> {doc_type_text}</td><td style='text-align: left;'><b>حصر عدد السجلات المدرجة:</b> {len(df_export_target)} سجل جاري مصفى</td></tr>"
+            html_document_payload += "</table>"
+            html_document_payload += f"<table class='document-items-table'><thead><tr>{table_headers}</tr></thead><tbody>{rows_html_p}</tbody></table>"
+            html_document_payload += "<div class='document-totals-box'>"
+            html_document_payload += f"<div style='width:100%; text-align:left; font-size:16px; margin-bottom:8px; color:#000;'><b>إجمالي ذمم أوامر التسليم الكلية المستحقة:</b> {p_total_lyd:,.2f} دينار ليبي</div>"
+            html_document_payload += f"<div style='width:100%; text-align:left; font-size:16px; color:#000;'><b>إجمالي مطلوب نولون الشحن الدولي المستحق:</b> ${p_total_usd:,.2f} دولار أمريكي</div>"
+            html_document_payload += "</div>"
+            html_document_payload += "<div class='document-signatures-area'><div>توقيع واعتماد الإدارة المادية: .........................</div><div>خِتم وتصديق الشركة الرسمي: .........................</div></div>"
+            html_document_payload += "</div>"
+            
+            st.markdown(html_document_payload, unsafe_allow_html=True)
 
-# ----------------- باقي الأقسام اللوجستية والمالية (محدثة وجاهزة) -----------------
+# ----------------- باقي الأقسام اللوجستية والمالية للمنظومة -----------------
 elif menu == "⚠️ الحاويات غير المكتملة":
     st.title("⚠️ محرك فحص وتحديد البيانات الناقصة في الحاويات")
     conn = get_db_connection()
@@ -345,10 +359,7 @@ elif menu == "⚠️ الحاويات غير المكتملة":
         elif missing_type == "قيمة أمر التسليم ناقصة": cond = (df_filtered['do_value_lyd'] == 0) | (df_filtered['do_value_lyd'].isna())
         df_incomplete = df_filtered[cond].copy()
         if df_incomplete.empty: st.success("🎉 كل البيانات مكتملة ولا يوجد نواقص.")
-        else:
-            th = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "رقم البوليصة", "رقم الحاوية", "التاريخ", "رقم أمر التسليم", "قيمة أمر التسليم", "الشحن النهائي"])
-            tr = "".join(f"<tr><td>{r['customer_name']}</td><td>{r['bl_number']}</td><td>{r['container_number']}</td><td>{r['shipment_date']}</td><td>{r['do_number']}</td><td>{r['do_value_lyd']:,.2f}</td><td>${r['final_freight_usd']:,.2f}</td></tr>" for _, r in df_incomplete.iterrows())
-            st.markdown(f"<div style='overflow-x:auto;'><table class='ui-table'><thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table></div>", unsafe_allow_html=True)
+        else: render_enterprise_html_grid(df_incomplete, show_internal_profit=False)
 
 elif menu == "💰 إيصالات القبض والمالية":
     st.title("💰 إدارة المدفوعات وإيصالات قبض الزبائن")
@@ -464,6 +475,7 @@ elif menu == "📥 رفع ملف إكسل":
                 for index, row in df.iterrows():
                     cust_name = str(row[col_cust]).strip()
                     if cust_name == "" or pd.isnull(row[col_cust]): continue
+                    
                     cursor.execute("INSERT INTO customers (name) VALUES (%s) ON CONFLICT (name) DO NOTHING", (cust_name,))
                     container, bl = str(row[col_cont]).strip(), str(row[col_bl]).strip()
                     raw_date = row[col_date]
