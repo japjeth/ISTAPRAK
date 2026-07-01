@@ -7,8 +7,9 @@ import io
 import plotly.graph_objects as go
 
 # ----------------- إعدادات الصفحة والـ UI -----------------
-st.set_page_config(page_title="منظومة إستبرق لإدارة الشحنات والمالية", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(title="منظومة إستبرق لإدارة الشحنات والمالية", layout="wide", initial_sidebar_state="expanded")
 
+# تحسين الـ CSS وإزالة الإجبار الجدولي المسبب لتداخل الحروف الظاهر في image_0a8876.png
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
@@ -23,9 +24,6 @@ st.markdown("""
     .metric-card { background-color: #ffffff; padding: 22px; border-radius: 14px; border-right: 6px solid #1e4620; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 20px; }
     .metric-card h5 { margin: 0 0 10px 0; color: #666; font-size: 15px; }
     .metric-card p { margin: 6px 0; font-size: 14px; color: #444; }
-    
-    /* جعل جداول ستريمليت تتماشى مع الواجهة العربية */
-    [data-testid="stDataFrame"] { direction: rtl !important; text-align: right !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -75,21 +73,21 @@ def to_excel(df):
         df.to_excel(writer, index=False, sheet_name='التقرير')
     return output.getvalue()
 
-# 📊 تنسيق أعمدة عرض البيانات الذكي
+# 📊 إعدادات تكوين الأعمدة لحل مشكلة التكثيف والمساحات
 column_configuration = {
-    "id": st.column_config.TextColumn("معرف الشحنة", width=70),
-    "اسم الزبون": st.column_config.TextColumn("اسم الزبون", width=180),
-    "رقم الحاوية": st.column_config.TextColumn("رقم الحاوية", width=150),
-    "رقم البوليصة": st.column_config.TextColumn("رقم البوليصة", width=150),
-    "التاريخ": st.column_config.TextColumn("التاريخ", width=120),
-    "رقم أمر التسليم": st.column_config.TextColumn("رقم أمر التسليم", width=130),
+    "id": st.column_config.TextColumn("معرف الشحنة", width=90),
+    "اسم الزبون": st.column_config.TextColumn("اسم الزبون", width=200),
+    "رقم الحاوية": st.column_config.TextColumn("رقم الحاوية", width=180),
+    "رقم البوليصة": st.column_config.TextColumn("رقم البوليصة", width=180),
+    "التاريخ": st.column_config.TextColumn("التاريخ", width=130),
+    "رقم أمر التسليم": st.column_config.TextColumn("رقم أمر التسليم", width=140),
     "قيمة أمر التسليم (د.ل)": st.column_config.NumberColumn("قيمة أمر التسليم (د.ل)", format="%.2f د.ل", width=160),
     "شحن الوكالة ($)": st.column_config.NumberColumn("شحن الوكالة ($)", format="$%.2f", width=140),
     "الشحن النهائي ($)": st.column_config.NumberColumn("الشحن النهائي ($)", format="$%.2f", width=140),
-    "صافي الربح ($)": st.column_config.NumberColumn("صافي الربح ($)", format="$%.2f", width=130),
+    "صافي الربح ($)": st.column_config.NumberColumn("صافي الربح ($)", format="$%.2f", width=140),
 }
 
-# ----------------- نافذة التعديل المنبثقة التفاعلية (Dialog) -----------------
+# ----------------- نافذة التعديل المنبثقة التفاعلية المصححة -----------------
 @st.dialog("📝 تعديل وإكمال بيانات الحاوية سحابياً")
 def edit_container_modal(shipment_id):
     conn = get_db_connection()
@@ -98,30 +96,29 @@ def edit_container_modal(shipment_id):
     row = cursor.fetchone()
     
     if row:
-        st.write(f"⚙️ أنت تقوم بتحديث بيانات الحاوية التابعة لحساب: **{row['customer_name']}**")
+        st.write(f"⚙️ تحديث بيانات الحاوية التابعة لحساب: **{row['customer_name']}**")
         
         ec1, ec2 = st.columns(2)
         with ec1: u_container = st.text_input("رقم الحاوية", value=str(row['container_number']))
         with ec2: u_bl = st.text_input("رقم البوليصة", value=str(row['bl_number']))
             
         ec3, ec4, ec5 = st.columns(3)
-        with ec4: u_date = st.text_input("التاريخ (YYYY-MM-DD)", value=str(row['shipment_date']))
-        with ec5: u_do_num = st.text_input("رقم أمر التسليم", value=str(row['do_number']))
-        with ec6 if 'ec6' in locals() else ec5: edit_do_val = st.number_input("قيمة أمر التسليم (LYD)", value=float(row['do_value_lyd']))
+        with ec3: u_date = st.text_input("التاريخ (YYYY-MM-DD)", value=str(row['shipment_date']))
+        with ec4: u_do_num = st.text_input("رقم أمر التسليم", value=str(row['do_number']))
+        with ec5: u_do_val = st.number_input("قيمة أمر التسليم (LYD)", value=float(row['do_value_lyd']))
             
         ec6, ec7 = st.columns(2)
-        with ec6: edit_agency = st.number_input("شحن الوكالة (USD)", value=float(row['agency_freight_usd']))
-        with ec7: edit_final = st.number_input("الشحن النهائي للزبون (USD)", value=float(selected_row['final_freight_usd'] if 'selected_row' in locals() and 'final_freight_usd' in selected_row else row['final_freight_usd']))
+        with ec6: u_agency = st.number_input("شحن الوكالة (USD)", value=float(row['agency_freight_usd']))
+        with ec7: u_final = st.number_input("الشحن النهائي للزبون (USD)", value=float(row['final_freight_usd']))
         
         st.write("---")
         if st.button("💾 حفظ التحديث ومزامنة البيانات أونلاين"):
             cursor.execute('''
                 UPDATE shipments SET container_number=%s, bl_number=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s
-            ''', (u_container, u_bl, u_date, u_do_num, edit_do_val, edit_agency, edit_final, shipment_id))
+            ''', (u_container, u_bl, u_date, u_do_num, u_do_val, u_agency, u_final, shipment_id))
             conn.commit()
             cursor.close(); conn.close()
             st.success("🎉 تم تحديث بيانات الحاوية بنجاح!")
-            st.meta = {"rerun": True} # علامة لإعادة التشغيل تلقائياً
             st.rerun()
     else:
         cursor.close(); conn.close()
@@ -155,7 +152,6 @@ if menu == "📊 لوحة التحكم والتقارير":
     if customers_df.empty:
         st.warning("لا يوجد بيانات مسجلة حالياً أونلاين.")
     else:
-        # فلاتر اختيار التقارير المتقدمة الجديدة
         with st.expander("⚙️ محرك الفلترة وتحديد نوع التقرير المطلوب", expanded=True):
             rc1, rc2 = st.columns(2)
             with rc1: report_scope = st.radio("نطاق التقرير المستهدف:", ["كل الزبائن الممسكين", "زبون محدد فردي"], horizontal=True)
@@ -171,9 +167,9 @@ if menu == "📊 لوحة التحكم والتقارير":
 
         st.write("---")
         
-        # 1️⃣ تقرير إجمالي لكل الزبائن (كل زبون في صف وبجانبه قيمه المادية)
+        # 1️⃣ تقرير إجمالي لكل الزبائن (كل زبون في صف وبجانبه قيمته المادية)
         if report_scope == "كل الزبائن الممسكين" and report_type == "تقرير إجمالي (الملخص والتحليل المالي)":
-            st.subheader("📋 تقرير الأرصاد والتحليل الإجمالي لجميع الزبائن (صف لكل زبون)")
+            st.subheader("📋 تقرير الأرصاد والتحليل الإجمالي لجميع الزبائن")
             
             summary_data = []
             for cust in customers_df['name']:
@@ -199,7 +195,6 @@ if menu == "📊 لوحة التحكم والتقارير":
                 
             summary_df = pd.DataFrame(summary_data)
             
-            # عرض الرسم البياني التفاعلي لجمالية لوحة التحكم
             if not summary_df.empty and shipments_all.shape[0] > 0:
                 fig = go.Figure()
                 fig.add_trace(go.Bar(x=summary_df['اسم الزبون'], y=summary_df['المتبقي (د.ل)'], name='متبقي (دينار)', marker_color='#f44336'))
@@ -208,20 +203,18 @@ if menu == "📊 لوحة التحكم والتقارير":
                 st.plotly_chart(fig, use_container_width=True)
                 
             st.dataframe(summary_df, use_container_width=True, hide_index=True)
-            
-            if st.button("🛠️ تحميل التقرير المالي الإجمالي"):
-                st.download_button(label="📥 بدء تحميل ملف Excel", data=to_excel(summary_df), file_name="all_customers_financial_summary.xlsx")
 
-        # 2️⃣ تقرير تفصيلي لكل الزبائن (يحتوي على اسم الزبون وكل الحاويات)
+        # 2️⃣ تقرير تفصيلي لكل الزبائن (🔥 تم تفعيل التعديل الفوري بالنقرة هنا أيضاً وحل مشكلة المظهر المنهار)
         elif report_scope == "كل الزبائن الممسكين" and report_type == "تقرير تفصيلي (سجل الحاويات وحصرها)":
             st.subheader("📋 التقرير التفصيلي الشامل لكافة حاويات المنظومة")
             
-            if shipments_all.empty: st.info("لا توجد حاويات مسجلة.")
+            if shipments_all.empty: 
+                st.info("لا توجد حاويات مسجلة.")
             else:
+                st.markdown("💡 **ميزة التفاعل مفعلة:** اضغط على سطر أي حاوية في الجدول أدناه لتعديل بياناتها مباشرة!")
                 df_all_show = shipments_all.copy()
                 df_all_show['profit_usd'] = df_all_show['final_freight_usd'] - df_all_show['agency_freight_usd']
                 
-                # ترتيب واختيار الأعمدة لتضمين اسم الزبون في صف الحاوية
                 needed_cols = {
                     'id': 'id', 'customer_name': 'اسم الزبون', 'container_number': 'رقم الحاوية',
                     'bl_number': 'رقم البوليصة', 'shipment_date': 'التاريخ', 'do_number': 'رقم أمر التسليم',
@@ -232,7 +225,17 @@ if menu == "📊 لوحة التحكم والتقارير":
                     needed_cols['profit_usd'] = 'صافي الربح ($)'
                     
                 df_rendered = df_all_show[list(needed_cols.keys())].rename(columns=needed_cols)
-                st.dataframe(df_rendered, use_container_width=True, column_config=column_configuration, hide_index=True)
+                
+                # تفعيل الـ on_select هنا لحل مشكلة عدم التعديل
+                selection_event_all = st.dataframe(
+                    df_rendered, use_container_width=True, hide_index=True,
+                    column_config=column_configuration, on_select="rerun", selection_mode="single-row"
+                )
+                
+                if selection_event_all.selection.rows:
+                    selected_idx = selection_event_all.selection.rows[0]
+                    target_shipment_id = int(df_rendered.iloc[selected_idx]['id'])
+                    edit_container_modal(target_shipment_id)
 
         # 3️⃣ تقرير إجمالي لزبون محدد (ملخص مالي وكروت ذكية)
         elif report_scope == "زبون محدد فردي" and report_type == "تقرير إجمالي (الملخص والتحليل المالي)":
@@ -261,14 +264,15 @@ if menu == "📊 لوحة التحكم والتقارير":
                     <p>المتبقي بذمته: <b style='color:#c62828;'>${req_usd - paid_usd:,.2f}</b></p>
                 </div>""", unsafe_allow_html=True)
 
-        # 4️⃣ تقرير تفصيلي لزبون محدد (🔥 ميزة التعديل الفوري والمباشر بالنقرة)
+        # 4️⃣ تقرير تفصيلي لزبون محدد
         elif report_scope == "زبون محدد فردي" and report_type == "تقرير تفصيلي (سجل الحاويات وحصرها)":
             st.subheader(f"📄 سجل حاويات الزبون: {selected_customer}")
             shipments_cust = shipments_all[shipments_all['customer_name'] == selected_customer].copy()
             
-            if shipments_cust.empty: st.info("لا توجد حاويات مسجلة لهذا الزبون.")
+            if shipments_cust.empty: 
+                st.info("لا توجد حاويات مسجلة لهذا الزبون.")
             else:
-                st.markdown("💡 **ميزة التفاعل مفعلة:** اضغط على سطر أي حاوية في الجدول أدناه لتفتح لك نافذة منبثقة لتعديل بياناتها مباشرة!")
+                st.markdown("💡 **ميزة التفاعل مفعلة:** اضغط على سطر أي حاوية في الجدول أدناه لتعديل بياناتها مباشرة!")
                 shipments_cust['profit_usd'] = shipments_cust['final_freight_usd'] - shipments_cust['agency_freight_usd']
                 
                 needed_cols = {
@@ -282,17 +286,14 @@ if menu == "📊 لوحة التحكم والتقارير":
                     
                 df_filtered_cust = shipments_cust[list(needed_cols.keys())].rename(columns=needed_cols)
                 
-                # تشغيل محرك الفلترة والتحديد بالنقرة
                 selection_event = st.dataframe(
                     df_filtered_cust, use_container_width=True, hide_index=True,
                     column_config=column_configuration, on_select="rerun", selection_mode="single-row"
                 )
                 
-                # فحص هل المستخدم قام بالضغط على سطر معين؟
                 if selection_event.selection.rows:
                     selected_idx = selection_event.selection.rows[0]
                     target_shipment_id = int(df_filtered_cust.iloc[selected_idx]['id'])
-                    # استدعاء دالة النافذة المنبثقة فوراً
                     edit_container_modal(target_shipment_id)
 
 # ----------------- 2. تقرير الحاويات غير المكتملة -----------------
