@@ -7,9 +7,10 @@ import io
 import plotly.graph_objects as go
 
 # ----------------- إعدادات الصفحة والـ UI -----------------
-st.set_page_config(title="منظومة إستبرق لإدارة الشحنات والمالية", layout="wide", initial_sidebar_state="expanded")
+# 🛠️ تم تصحيح الخطأ هنا من title إلى page_title لحل مشكلة image_0a8f9c.png
+st.set_page_config(page_title="منظومة إستبرق لإدارة الشحنات والمالية", layout="wide", initial_sidebar_state="expanded")
 
-# تحسين الـ CSS وإزالة الإجبار الجدولي المسبب لتداخل الحروف الظاهر في image_0a8876.png
+# تحسين مظهر الواجهة وتنظيف الـ CSS لضمان عدم تداخل الحروف نهائياً
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
@@ -73,12 +74,12 @@ def to_excel(df):
         df.to_excel(writer, index=False, sheet_name='التقرير')
     return output.getvalue()
 
-# 📊 إعدادات تكوين الأعمدة لحل مشكلة التكثيف والمساحات
+# 📊 إعدادات تكوين الأعمدة وضبط المساحات لراحة العين ومنع أي قطع
 column_configuration = {
-    "id": st.column_config.TextColumn("معرف الشحنة", width=90),
-    "اسم الزبون": st.column_config.TextColumn("اسم الزبون", width=200),
-    "رقم الحاوية": st.column_config.TextColumn("رقم الحاوية", width=180),
+    "معرف الشحنة": st.column_config.TextColumn("معرف الشحنة", width=100),
+    "اسم الزبون": st.column_config.TextColumn("اسم الزبون", width=220),
     "رقم البوليصة": st.column_config.TextColumn("رقم البوليصة", width=180),
+    "رقم الحاوية": st.column_config.TextColumn("رقم الحاوية", width=180),
     "التاريخ": st.column_config.TextColumn("التاريخ", width=130),
     "رقم أمر التسليم": st.column_config.TextColumn("رقم أمر التسليم", width=140),
     "قيمة أمر التسليم (د.ل)": st.column_config.NumberColumn("قيمة أمر التسليم (د.ل)", format="%.2f د.ل", width=160),
@@ -204,7 +205,7 @@ if menu == "📊 لوحة التحكم والتقارير":
                 
             st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
-        # 2️⃣ تقرير تفصيلي لكل الزبائن (🔥 تم تفعيل التعديل الفوري بالنقرة هنا أيضاً وحل مشكلة المظهر المنهار)
+        # 2️⃣ تقرير تفصيلي لكل الزبائن (🔥 تم ضبط ترتيب الأعمدة المطلوب RTL وتفعيل التعديل بالنقرة)
         elif report_scope == "كل الزبائن الممسكين" and report_type == "تقرير تفصيلي (سجل الحاويات وحصرها)":
             st.subheader("📋 التقرير التفصيلي الشامل لكافة حاويات المنظومة")
             
@@ -215,18 +216,28 @@ if menu == "📊 لوحة التحكم والتقارير":
                 df_all_show = shipments_all.copy()
                 df_all_show['profit_usd'] = df_all_show['final_freight_usd'] - df_all_show['agency_freight_usd']
                 
-                needed_cols = {
-                    'id': 'id', 'customer_name': 'اسم الزبون', 'container_number': 'رقم الحاوية',
-                    'bl_number': 'رقم البوليصة', 'shipment_date': 'التاريخ', 'do_number': 'رقم أمر التسليم',
-                    'do_value_lyd': 'قيمة أمر التسليم (د.ل)', 'final_freight_usd': 'الشحن النهائي ($)'
-                }
-                if show_agency_price:
-                    needed_cols['agency_freight_usd'] = 'شحن الوكالة ($)'
-                    needed_cols['profit_usd'] = 'صافي الربح ($)'
-                    
-                df_rendered = df_all_show[list(needed_cols.keys())].rename(columns=needed_cols)
+                # 🔄 تم الترتيب الصارم للأعمدة كما طلبت: اسم الزبون -> رقم البوليصة -> رقم الحاوية -> إلخ
+                df_all_show = df_all_show.rename(columns={
+                    'id': 'معرف الشحنة',
+                    'customer_name': 'اسم الزبون',
+                    'bl_number': 'رقم البوليصة',
+                    'container_number': 'رقم الحاوية',
+                    'shipment_date': 'التاريخ',
+                    'do_number': 'رقم أمر التسليم',
+                    'do_value_lyd': 'قيمة أمر التسليم (د.ل)',
+                    'agency_freight_usd': 'شحن الوكالة ($)',
+                    'final_freight_usd': 'الشحن النهائي ($)',
+                    'profit_usd': 'صافي الربح ($)'
+                })
                 
-                # تفعيل الـ on_select هنا لحل مشكلة عدم التعديل
+                cols_order = ['معرف الشحنة', 'اسم الزبون', 'رقم البوليصة', 'رقم الحاوية', 'التاريخ', 'رقم أمر التسليم', 'قيمة أمر التسليم (د.ل)', 'الشحن النهائي ($)']
+                if show_agency_price:
+                    cols_order.append('شحن الوكالة ($)')
+                    cols_order.append('صافي الربح ($)')
+                    
+                df_rendered = df_all_show[cols_order]
+                
+                # عرض الجدول النظيف الخالي من عيوب التداخل
                 selection_event_all = st.dataframe(
                     df_rendered, use_container_width=True, hide_index=True,
                     column_config=column_configuration, on_select="rerun", selection_mode="single-row"
@@ -234,7 +245,7 @@ if menu == "📊 لوحة التحكم والتقارير":
                 
                 if selection_event_all.selection.rows:
                     selected_idx = selection_event_all.selection.rows[0]
-                    target_shipment_id = int(df_rendered.iloc[selected_idx]['id'])
+                    target_shipment_id = int(df_rendered.iloc[selected_idx]['معرف الشحنة'])
                     edit_container_modal(target_shipment_id)
 
         # 3️⃣ تقرير إجمالي لزبون محدد (ملخص مالي وكروت ذكية)
@@ -264,7 +275,7 @@ if menu == "📊 لوحة التحكم والتقارير":
                     <p>المتبقي بذمته: <b style='color:#c62828;'>${req_usd - paid_usd:,.2f}</b></p>
                 </div>""", unsafe_allow_html=True)
 
-        # 4️⃣ تقرير تفصيلي لزبون محدد
+        # 4️⃣ تقرير تفصيلي لزبون محدد (🔥 تم ضبط الترتيب RTL والتعديل بالنقرة)
         elif report_scope == "زبون محدد فردي" and report_type == "تقرير تفصيلي (سجل الحاويات وحصرها)":
             st.subheader(f"📄 سجل حاويات الزبون: {selected_customer}")
             shipments_cust = shipments_all[shipments_all['customer_name'] == selected_customer].copy()
@@ -275,16 +286,25 @@ if menu == "📊 لوحة التحكم والتقارير":
                 st.markdown("💡 **ميزة التفاعل مفعلة:** اضغط على سطر أي حاوية في الجدول أدناه لتعديل بياناتها مباشرة!")
                 shipments_cust['profit_usd'] = shipments_cust['final_freight_usd'] - shipments_cust['agency_freight_usd']
                 
-                needed_cols = {
-                    'id': 'id', 'container_number': 'رقم الحاوية', 'bl_number': 'رقم البوليصة',
-                    'shipment_date': 'التاريخ', 'do_number': 'رقم أمر التسليم',
-                    'do_value_lyd': 'قيمة أمر التسليم (د.ل)', 'final_freight_usd': 'الشحن النهائي ($)'
-                }
+                shipments_cust = shipments_cust.rename(columns={
+                    'id': 'معرف الشحنة',
+                    'customer_name': 'اسم الزبون',
+                    'bl_number': 'رقم البوليصة',
+                    'container_number': 'رقم الحاوية',
+                    'shipment_date': 'التاريخ',
+                    'do_number': 'رقم أمر التسليم',
+                    'do_value_lyd': 'قيمة أمر التسليم (د.ل)',
+                    'agency_freight_usd': 'شحن الوكالة ($)',
+                    'final_freight_usd': 'الشحن النهائي ($)',
+                    'profit_usd': 'صافي الربح ($)'
+                })
+                
+                cols_order_cust = ['معرف الشحنة', 'اسم الزبون', 'رقم البوليصة', 'رقم الحاوية', 'التاريخ', 'رقم أمر التسليم', 'قيمة أمر التسليم (د.ل)', 'الشحن النهائي ($)']
                 if show_agency_price:
-                    needed_cols['agency_freight_usd'] = 'شحن الوكالة ($)'
-                    needed_cols['profit_usd'] = 'صافي الربح ($)'
+                    cols_order_cust.append('شحن الوكالة ($)')
+                    cols_order_cust.append('صافي الربح ($)')
                     
-                df_filtered_cust = shipments_cust[list(needed_cols.keys())].rename(columns=needed_cols)
+                df_filtered_cust = shipments_cust[cols_order_cust]
                 
                 selection_event = st.dataframe(
                     df_filtered_cust, use_container_width=True, hide_index=True,
@@ -293,10 +313,10 @@ if menu == "📊 لوحة التحكم والتقارير":
                 
                 if selection_event.selection.rows:
                     selected_idx = selection_event.selection.rows[0]
-                    target_shipment_id = int(df_filtered_cust.iloc[selected_idx]['id'])
+                    target_shipment_id = int(df_filtered_cust.iloc[selected_idx]['معرف الشحنة'])
                     edit_container_modal(target_shipment_id)
 
-# ----------------- 2. تقرير الحاويات غير المكتملة -----------------
+# ----------------- الأقسام المتبقية (محدثة بالكامل سحابياً) -----------------
 elif menu == "⚠️ الحاويات غير المكتملة":
     st.title("⚠️ محرك فحص وتحديد البيانات الناقصة في الحاويات")
     conn = get_db_connection()
@@ -328,14 +348,14 @@ elif menu == "⚠️ الحاويات غير المكتملة":
         st.write("---")
         if df_incomplete.empty: st.success("🎉 ممتاز! لا توجد أي حاويات ينطبق عليها هذا النقص.")
         else:
-            df_incomplete['قيمة أمر التسليم (د.ل)'] = df_incomplete['do_value_lyd']
-            df_incomplete['شحن الوكالة ($)'] = df_incomplete['agency_freight_usd']
-            df_incomplete['الشحن النهائي ($)'] = df_incomplete['final_freight_usd']
-            df_to_show = df_incomplete.rename(columns={'customer_name': 'اسم الزبون', 'container_number': 'رقم الحاوية', 'bl_number': 'رقم البوليصة', 'shipment_date': 'التاريخ', 'do_number': 'رقم أمر التسليم'})
-            needed_cols = ['اسم الزبون', 'رقم الحاوية', 'رقم البوليصة', 'التاريخ', 'رقم أمر التسليم', 'قيمة أمر التسليم (د.ل)', 'شحن الوكالة ($)', 'الشحن النهائي ($)']
-            st.dataframe(df_to_show[needed_cols], use_container_width=True, column_config=column_configuration, hide_index=True)
+            df_incomplete = df_incomplete.rename(columns={
+                'id': 'معرف الشحنة', 'customer_name': 'اسم الزبون', 'bl_number': 'رقم البوليصة', 
+                'container_number': 'رقم الحاوية', 'shipment_date': 'التاريخ', 'do_number': 'رقم أمر التسليم',
+                'do_value_lyd': 'قيمة أمر التسليم (د.ل)', 'agency_freight_usd': 'شحن الوكالة ($)', 'final_freight_usd': 'الشحن النهائي ($)'
+            })
+            needed_cols = ['معرف الشحنة', 'اسم الزبون', 'رقم البوليصة', 'رقم الحاوية', 'التاريخ', 'رقم أمر التسليم', 'قيمة أمر التسليم (د.ل)', 'شحن الوكالة ($)', 'الشحن النهائي ($)']
+            st.dataframe(df_incomplete[needed_cols], use_container_width=True, column_config=column_configuration, hide_index=True)
 
-# ----------------- 3. إيصالات القبض والمالية -----------------
 elif menu == "💰 إيصالات القبض والمالية":
     st.title("💰 إدارة المدفوعات وإيصالات قبض الزبائن")
     conn = get_db_connection()
@@ -368,7 +388,6 @@ elif menu == "💰 إيصالات القبض والمالية":
             st.dataframe(view_df[["اسم الزبون", "المبلغ", "العملة", "التاريخ", "ملاحظات"]], use_container_width=True, hide_index=True)
     cursor.close(); conn.close()
 
-# ----------------- 4. شاشة تعديل وحذف إيصالات القبض -----------------
 elif menu == "✏️ تعديل وحذف الإيصالات":
     st.title("✏️ التحكم في إيصالات القبض (تعديل / حذف)")
     conn = get_db_connection()
@@ -392,7 +411,7 @@ elif menu == "✏️ تعديل وحذف الإيصالات":
             
             st.write("---")
             rec_c1, rec_c2, rec_c3 = st.columns(3)
-            with rec_c1: edit_r_cust = st.text_input("اسم الزبون", value=selected_r_row['customer_name'], disabled=True)
+            with Red_c1 if 'Red_c1' in locals() else rec_c1: edit_r_cust = st.text_input("اسم الزبون", value=selected_r_row['customer_name'], disabled=True)
             with rec_c2: edit_r_amount = st.number_input("المبلغ المعدل", value=float(selected_r_row['amount']))
             with rec_c3: edit_r_curr = st.selectbox("العملة", ["دينار ليبي LYD", "دولار أمريكي USD"], index=0 if "دينار" in selected_r_row['currency'] else 1)
             
@@ -411,7 +430,6 @@ elif menu == "✏️ تعديل وحذف الإيصالات":
                     conn.commit(); st.success("تم حذف إيصال القبض."); st.rerun()
     cursor.close(); conn.close()
 
-# ----------------- 5. إضافة شحنة جديدة يدوياً بدعم كامل للـ LCL -----------------
 elif menu == "➕ إضافة شحنة جديدة (يدوي/LCL)":
     st.title("➕ إضافة حاوية / شحنة جديدة يدوياً")
     conn = get_db_connection()
@@ -442,7 +460,6 @@ elif menu == "➕ إضافة شحنة جديدة (يدوي/LCL)":
                 conn.commit(); st.success(f"🎉 تم حفظ وإضافة الحاوية بنجاح!")
     cursor.close(); conn.close()
 
-# ----------------- 6. رفع ملف إكسل بدعم الحاويات المشتركة الـ LCL -----------------
 elif menu == "📥 رفع ملف إكسل":
     st.title("📥 رفع البيانات مباشرة من ملف Excel")
     uploaded_file = st.file_uploader("اختر ملف الإكسل وارسم أعمدتك:", type=["xlsx", "xls"])
@@ -501,7 +518,6 @@ elif menu == "📥 رفع ملف إكسل":
                 st.success(f"🎉 تمت العملية بنجاح! | 📥 حاويات مضافة: {insert_count} | 🔄 حاويات تم استكمال بياناتها: {update_count}")
         except Exception as e: st.error(f"حدث خطأ أثناء معالجة الملف: {e}")
 
-# ----------------- 7. إدارة الزبائن -----------------
 elif menu == "👥 إدارة الزبائن":
     st.title("👥 التحكم الكامل في قائمة الزبائن")
     conn = get_db_connection()
@@ -534,7 +550,6 @@ elif menu == "👥 إدارة الزبائن":
                 conn.commit(); st.success("تم الحذف."); st.rerun()
     cursor.close(); conn.close()
 
-# ----------------- 8. تعديل وحذف الشحنات والحاويات فردياً -----------------
 elif menu == "📝 تعديل وحذف الشحنات":
     st.title("📝 محرك البحث المتقدم وتعديل الحاويات يدوياً")
     conn = get_db_connection()
@@ -579,7 +594,6 @@ elif menu == "📝 تعديل وحذف الشحنات":
                     conn.commit(); st.success("تم الحذف."); st.rerun()
     cursor.close(); conn.close()
 
-# ----------------- 9. شاشة مسح البيانات المخصصة والانتقائية -----------------
 elif menu == "🗑️ مسح البيانات دفعة واحدة":
     st.title("🗑️ الحذف الانتقائي والذكي للحاويات")
     conn = get_db_connection()
@@ -606,7 +620,7 @@ elif menu == "🗑️ مسح البيانات دفعة واحدة":
                     if st.button("🗑️ تنفيذ حذف الحاويات المحددة"):
                         if confirm_word == "حذف":
                             ids_to_delete = [shipment_options[lbl] for lbl in selected_labels]
-                            cursor.execute("DELETE FROM shipments WHERE id = ANY(%s)", (ids_to_delete,))
+                            cursor.execute("DELETE FROM shipments WHERE id IN %s", (tuple(ids_to_delete),))
                             conn.commit(); st.success("تم المسح بنجاح!"); st.rerun()
     with tab2:
         clear_financials = st.checkbox("مسح إيصالات القبض وقائمة أسماء الزبائن أيضاً")
