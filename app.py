@@ -26,7 +26,7 @@ st.markdown("""
     .kpi-box h4 { margin: 0 0 8px 0; color: #666; font-size: 14px; font-weight: 600; }
     .kpi-box p { margin: 0; font-size: 20px; font-weight: 700; color: #1e4620; }
     
-    /* 📊 هندسة الجداول الحقيقية المستقرة RTL على الشاشة */
+    /* 📊 هندسة الجداول الحقيقية المستقرة RTL على الشاشة لمنع التداخل والانكماش تماماً */
     .table-responsive-container { width: 100%; overflow-x: auto; direction: rtl; margin: 20px 0; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: white; border: 1px solid #eef2e6; }
     table.enterprise-rtl-table { width: 100%; border-collapse: collapse; direction: rtl; text-align: right; }
     table.enterprise-rtl-table th { background-color: #1e4620; color: white; padding: 16px 20px; font-weight: 600; font-size: 14px; border-bottom: 2px solid #143316; white-space: nowrap; }
@@ -48,7 +48,7 @@ st.markdown("""
     .print-totals-zone { margin-top: 35px; padding: 20px; background-color: #fcfcf9; border: 1px solid #000000; border-radius: 6px; color: #000000 !important; }
     .print-signatures { margin-top: 60px; width: 100%; display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; color: #000000 !important; }
     
-    /* 🖨️ الصيانة الشاملة للمحرك: حجب الأدوات والـ Sidebar مع الحفاظ على هيكل الصفحة مرئياً لمنع بياض الورقة */
+    /* 🖨️ الصيانة الشاملة للمحرك: حجب الأدوات والـ Sidebar مع الحفاظ على التقرير لمنع بياض الورقة نهائياً */
     @media print {
         [data-testid="stSidebar"], 
         [data-testid="stHeader"], 
@@ -59,8 +59,13 @@ st.markdown("""
         div.stRadio, 
         .stExpander,
         .print-instruction,
+        .dashboard-kpi-container,
+        .table-responsive-container,
         .no-print {
             display: none !important;
+            height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         [data-testid="stAppViewContainer"] { padding: 0 !important; margin: 0 !important; background-color: white !important; }
     }
@@ -227,7 +232,7 @@ if menu == "📊 لوحة التحكم والتقارير":
                 
         st.write("---")
         
-        # 🟢 الحالة الأولى: التقرير الإجمالي العام لجميع الزبائن (صف لكل زبون)
+        # 1️⃣ تقرير إجمالي لكل الزبائن (صف لكل زبون)
         if report_scope == "كل الزبائن (تقرير إجمالي عام)":
             st.subheader("📋 كشف ملخص أرصاد الحسابات لجميع الزبائن")
             summary_data = []
@@ -254,7 +259,7 @@ if menu == "📊 لوحة التحكم والتقارير":
                 tr_sum += f"<tr><td>{r['اسم الزبون']}</td><td>{r['عدد الحاويات']}</td><td>{r['أوامر التسليم']:,.2f} د.ل</td><td>{r['المدفوع_ليبي']:,.2f} د.ل</td><td style='color:red; font-weight:bold;'>{r['المتبقي_ليبي']:,.2f} د.ل</td><td>${r['الشحن']:,.2f}</td><td>${r['المدفوع_دولار']:,.2f}</td><td style='color:red; font-weight:bold;'>${r['المتبقي_دولار']:,.2f}</td></tr>"
             st.markdown(f'<div class="table-responsive-container"><table class="enterprise-rtl-table"><thead><tr>{th_sum}</tr></thead><tbody>{tr_sum}</tbody></table></div>', unsafe_allow_html=True)
 
-        # 2️⃣ الحالة الثانية: التقرير التفصيلي لزبون محدد أو للكل بالتفصيل
+        # 2️⃣ الحالة الثانية: التقرير التفصيلي لزبون محدد
         else:
             df_cust = shipments_all[shipments_all['customer_name'] == selected_customer].copy()
             cust_receipts = receipts_all[receipts_all['customer_name'] == selected_customer]
@@ -287,15 +292,13 @@ if menu == "📊 لوحة التحكم والتقارير":
                 st.write("#### 📦 سجل الحاويات المفتوحة أونلاين (عرض صريح ومفرود):")
                 render_custom_html_grid(df_cust, show_profit=show_agency_price)
                 
-                # لوحة الاختيار المتقدم المعالجة
                 st.write("---")
                 st.markdown("### ⚙️ لوحة المعالجة الذكية والتحكم في كشوفات الحساب:")
                 
                 df_cust['process_label'] = "معرف [" + df_cust['id'].astype(str) + "] | بوليصة: " + df_cust['bl_number'].astype(str) + " | حاوية: " + df_cust['container_number'].astype(str)
                 
-                # صندوق الاختيار المتعدد المضمون لفرز 5 من 50 مثلاً
                 selected_shipments = st.multiselect(
-                    "اضغط هنا واختر الحاوية / الحاويات المراد تعديلها أو طباعتها فقط (اتركها فارغة لتحديد وطباعة الكل):",
+                    "اضغط هنا وانقر على أرقام الحاويات/البوالص المراد تعديلها أو طباعتها فقط (اتركها فارغة لتحديد وطباعة الكل):",
                     options=df_cust['process_label'].tolist()
                 )
                 
@@ -312,16 +315,18 @@ if menu == "📊 لوحة التحكم والتقارير":
                         if st.button("📝 تعديل وإكمال بيانات الحاوية المختارة"):
                             edit_container_modal(target_db_id)
                     else:
-                        st.info("💡 لتعديل بيانات شحنة، يرجى اختيار سطر واحد فقط من القائمة المنسدلة أعلاه.")
+                        st.info("💡 لتعديل بيانات شحنة، يرجى اختيار حاوية واحدة فقط من القائمة المنسدلة أعلاه.")
                         
                 with btn_col2:
                     generate_invoice = st.button("🖨️ توليد كشف الحساب الفاخر الجاهز للطباعة والـ PDF")
                     
                 if generate_invoice:
+                    st.success("🎉 تم توليد كشف الحساب بنجاح! اضغط الآن على Ctrl + P من لوحة المفاتيح لبدء الطباعة الفورية.")
+                    
                     total_lyd_print = df_chosen_units['do_value_lyd'].sum()
                     total_usd_print = df_chosen_units['final_freight_usd'].sum()
                     
-                    # 🛠️ الحل السحري الحاسم: بناء كود الـ HTML بربط صريح لمنع تفسير الماركدوان له ككود نصي
+                    # 🛠️ الحل السحري الحاسم: بناء كود الـ HTML بربط متتالي صريح لمنع رندرة الماركدوان الخاطئة
                     print_rows_html = ""
                     for _, r in df_chosen_units.iterrows():
                         agency_td_p = f"<td>${r['agency_freight_usd']:,.2f}</td>" if show_agency_price else ""
@@ -358,7 +363,7 @@ if menu == "📊 لوحة التحكم والتقارير":
                     
                     st.markdown(html_report_template, unsafe_allow_html=True)
 
-# ----------------- باقي الأقسام (محدثة بالكامل ومتوافقة مع PostgreSQL %s) -----------------
+# ----------------- باقي الأقسام (محدثة ومتوافقة بالكامل %s) -----------------
 elif menu == "⚠️ الحاويات غير المكتملة":
     st.title("⚠️ محرك فحص وتحديد البيانات الناقصة في الحاويات")
     conn = get_db_connection()
@@ -619,8 +624,16 @@ elif menu == "🗑️ مسح البيانات دفعة واحدة":
                     if st.button("🗑️ تنفيذ حذف الحاويات المحددة"):
                         if confirm_word == "حذف":
                             ids_to_delete = [shipment_options[lbl] for lbl in selected_labels]
-                            placeholders = ', '.join(['%s'] * len(ids_to_delete))
-                            cursor.execute(f"DELETE FROM shipments WHERE id IN ({placeholders})", ids_to_delete)
+                            cursor.execute("DELETE FROM shipments WHERE id = ANY(%s)", (ids_to_delete,))
                             conn.commit(); st.success("تم المسح بنجاح!"); st.rerun()
     with tab2:
-        clear_financials = st.checkbox("مسح إ
+        clear_financials = st.checkbox("مسح إيصالات القبض وقائمة أسماء الزبائن أيضاً (تصفير شامل للبرنامج)")
+        confirm_all = st.text_input("لتأكيد التصفير، اكتب عبارة 'Core-Reset' في الفراغ أدناه:")
+        if st.button("💥 بدء التصفير الشامل والنهائي"):
+            if confirm_all == "Core-Reset":
+                cursor.execute("TRUNCATE TABLE shipments RESTART IDENTITY")
+                if clear_financials:
+                    cursor.execute("TRUNCATE TABLE receipts RESTART IDENTITY")
+                    cursor.execute("TRUNCATE TABLE customers RESTART IDENTITY")
+                conn.commit(); st.success("تم تصفير المنظومة بنجاح!"); st.rerun()
+    cursor.close(); conn.close()
