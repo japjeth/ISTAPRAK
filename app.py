@@ -5,48 +5,48 @@ from psycopg2.extras import DictCursor
 from datetime import datetime
 import io
 
-# 1. تهيئة الصفحة بنسق عريض رصين
+# 1. إعداد الصفحة الأساسي بنسق عريض
 st.set_page_config(page_title="منظومة إستبرق العالمية لإدارة الشحنات والمالية", layout="wide", initial_sidebar_state="expanded")
 
-# 2. حزمة الـ CSS الملوكية لثبات الـ RTL وتنسيق الطباعة العمودية الصارمة المتعددة الصفحات A4 Portrait
+# 2. حزمة الـ CSS العالمية لثبات الـ RTL وتنسيق الطباعة العمودية المتعددة الصفحات (بدون انقطاع)
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
-html, body, [data-testid="stSidebar"] { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; background-color: #f5f6fa; }
+html, body, [data-testid="stSidebar"] { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; background-color: #f4f6f9; }
 .stHeading, .stMarkdown, p, div, label, span { text-align: right; direction: rtl; }
 
 /* بطاقات الموقف المالي الفاخرة Dashboard Cards */
 .erp-card-container { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 25px; direction: rtl; }
-.erp-card { flex: 1; min-width: 240px; background: white; padding: 22px; border-radius: 12px; border-top: 5px solid #1e4620; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-.erp-card h4 { margin: 0 0 8px 0; color: #7f8c8d; font-size: 14px; font-weight: 600; }
+.erp-card { flex: 1; min-width: 240px; background: white; padding: 24px; border-radius: 12px; border-top: 5px solid #1e4620; box-shadow: 0 10px 25px rgba(0,0,0,0.02); }
+.erp-card h4 { margin: 0 0 10px 0; color: #7f8c8d; font-size: 14px; font-weight: 600; }
 .erp-card p { margin: 0; font-size: 22px; font-weight: 700; color: #1e4620; }
 
-/* 📊 هندسة الجداول الجمركية الحقيقية المستقرة RTL على الشاشة (تمنع تماماً تداخل الحروف أو قطع الأرقام) */
-.premium-table-wrapper { width: 100%; overflow-x: auto; direction: rtl; margin: 20px 0; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); background: white; border: 1px solid #e3e8ee; }
+/* 📊 هندسة الجداول الجمركية الحقيقية المستقرة RTL على الشاشة */
+.premium-table-wrapper { width: 100%; overflow-x: auto; direction: rtl; margin: 25px 0; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.03); background: white; border: 1px solid #e0e0e0; }
 table.premium-enterprise-table { width: 100%; border-collapse: collapse; direction: rtl; text-align: right; }
-table.premium-enterprise-table th { background-color: #1e4620; color: white; padding: 15px 18px; font-weight: 600; font-size: 14px; border-bottom: 2px solid #143316; white-space: nowrap; text-align: right; }
-table.premium-enterprise-table td { padding: 13px 18px; text-align: right; border-bottom: 1px solid #f1f3f5; color: #2c3e50; font-size: 14px; font-weight: 500; white-space: nowrap; }
+table.premium-enterprise-table th { background-color: #1e4620; color: white; padding: 16px 20px; font-weight: 600; font-size: 14px; border-bottom: 3px solid #143316; white-space: nowrap; text-align: right; }
+table.premium-enterprise-table td { padding: 14px 20px; text-align: right; border-bottom: 1px solid #f1f2f6; color: #2c3e50; font-size: 14px; font-weight: 500; white-space: nowrap; }
 table.premium-enterprise-table tr:nth-child(even) { background-color: #f9fbf9; }
 table.premium-enterprise-table tr:hover { background-color: #f1f6f1; }
 
 /* 📜 تصميم وثيقة كشف الحساب الرسمي الملوكي المخصص للطباعة العمودية اللامتناهية الصفحات */
-.official-print-document { background-color: white !important; padding: 40px; border: 1px solid #000000; border-radius: 6px; direction: rtl; text-align: right; margin-top: 30px; color: #000000 !important; }
-.document-corporate-header { text-align: center; border-bottom: 4px double #1e4620; padding-bottom: 15px; margin-bottom: 25px; }
-.document-corporate-header h1 { color: #1e4620 !important; font-weight: 700; margin: 0; font-size: 24px; text-align: center; }
-.report-info-table { width: 100%; margin-bottom: 20px; font-size: 14px; color: #000000 !important; }
-.report-info-table td { padding: 5px; border: none !important; }
+.official-print-document { background-color: white !important; padding: 40px; border: 2px solid #000000; border-radius: 8px; direction: rtl; text-align: right; margin-top: 35px; color: #000000 !important; }
+.document-corporate-header { text-align: center; border-bottom: 4px double #1e4620; padding-bottom: 20px; margin-bottom: 30px; }
+.document-corporate-header h1 { color: #1e4620 !important; font-weight: 700; margin: 0; font-size: 26px; text-align: center; }
+.document-meta-table { width: 100%; margin-bottom: 25px; font-size: 15px; color: #000000 !important; }
+.document-meta-table td { padding: 6px; border: none !important; }
 
-table.print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; color: #000000 !important; }
-table.print-table th { background-color: #f2f2f2 !important; color: #1e4620 !important; border: 1px solid #000000 !important; padding: 11px; font-weight: bold; text-align: right; }
-table.print-table td { border: 1px solid #000000 !important; padding: 11px; text-align: right; color: #000000 !important; font-weight: 500; }
+table.document-items-table { width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 14px; color: #000000 !important; }
+table.document-items-table th { background-color: #f5f5f2 !important; color: #1e4620 !important; border: 1px solid #000000 !important; padding: 12px; font-weight: bold; text-align: right; }
+table.document-items-table td { border: 1px solid #000000 !important; padding: 12px; text-align: right; color: #000000 !important; font-weight: 500; }
 
-.document-totals-box { margin-top: 30px; padding: 18px; background-color: #fcfcf9; border: 1px solid #000000; border-radius: 6px; color: #000000 !important; }
-.document-signatures-area { margin-top: 50px; width: 100%; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #000000 !important; }
+.document-totals-box { margin-top: 35px; padding: 20px; background-color: #fafafa; border: 1px solid #000000; border-radius: 6px; color: #000000 !important; }
+.document-signatures-area { margin-top: 60px; width: 100%; display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; color: #000000 !important; }
 
-/* 🖨️ محرك التوزيع العمودي الحاسم والأصيل: يخفي أدوات التحكم ويترك الفاتورة تتدفق أوتوماتيكياً عبر الصفحات */
+/* 🖨️ محرك التوزيع العمودي الحاسم: يكسر قيود الشاشة ويسمح بتدفق البيانات عبر صفحة 2 و 3 و 4 بلا حدود */
 @media print {
     @page { size: A4 portrait; margin: 20mm 15mm 20mm 15mm; }
-    /* إخفاء شل الـ UI التفاعلي بالكامل دون التأثير على الهيكل المطبوع */
+    /* إخفاء واجهة المستخدم بالكامل لتبقى فقط الفاتورة */
     header, footer, [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stElementToolbar"],
     div.stButton, div.stForm, div.stSelectbox, div.stMultiSelect, div.stRadio, .stExpander, .print-instruction, .premium-table-wrapper, .erp-card-container, .no-print {
         display: none !important;
@@ -54,13 +54,15 @@ table.print-table td { border: 1px solid #000000 !important; padding: 11px; text
         padding: 0 !important;
         margin: 0 !important;
     }
-    /* تحرير الحاوية الأساسية لتتمدد طولياً بلا قيود وتمنع بياض الصفحة */
+    /* تحرير الحاوية الأساسية لتتمدد طولياً وتمنع بياض وانقطاع الصفحات التالية */
     [data-testid="stAppViewContainer"], .main, .block-container, [data-testid="stVerticalBlock"] {
         padding: 0 !important;
         margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
         display: block !important;
+        overflow: visible !important;
+        height: auto !important;
     }
     .official-print-document {
         display: block !important;
@@ -69,9 +71,11 @@ table.print-table td { border: 1px solid #000000 !important; padding: 11px; text
         margin: 0 !important;
         width: 100% !important;
         direction: rtl !important;
+        overflow: visible !important;
+        height: auto !important;
     }
-    table.print-table { page-break-inside: auto !important; width: 100% !important; }
-    table.print-table tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+    table.document-items-table { page-break-inside: auto !important; width: 100% !important; }
+    table.document-items-table tr { page-break-inside: avoid !important; page-break-after: auto !important; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -153,9 +157,9 @@ menu = st.sidebar.radio("قائمة تحكم المنظومة:", [
     "🗑️ مسح البيانات دفعة واحدة"
 ])
 
-# ==================== 📊 إعادة بناء مركز العمليات والتقارير من الصفر 100% ====================
+# ==================== 📊 مركز العمليات والتقارير الاحترافي والمباشر ====================
 if menu == "📊 لوحة التحكم والتقارير":
-    st.title("📊 مركز التقارير المالية الاستراتيجية")
+    st.title("📊 مركز التقارير المالية الاستراتيجية وحصر الحسابات")
     
     conn = get_db_connection()
     customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
@@ -166,28 +170,28 @@ if menu == "📊 لوحة التحكم والتقارير":
     if customers_df.empty:
         st.warning("لا توجد بيانات زبائن أو شحنات مسجلة أونلاين حالياً.")
     else:
-        # عرض الكتل المالية الكلية للشركة الفاخرة Dashboard KPIs
+        # عرض الكتل المالية الكلية للشركة الفاخرة
         t_cont = len(shipments_all)
         t_lyd = shipments_all['do_value_lyd'].sum() if not shipments_all.empty else 0.0
         t_usd = shipments_all['final_freight_usd'].sum() if not shipments_all.empty else 0.0
         
         st.markdown(f"""
         <div class="erp-card-container">
-            <div class="erp-card"><h4>📦 حجم الحاويات والشحنات المعالجة</h4><p>{t_cont} شحنة جارية</p></div>
-            <div class="erp-card"><h4>💵 ذمم أوامر التسليم الكلية للشركة</h4><p>{t_lyd:,.2f} د.ل</p></div>
-            <div class="erp-card"><h4>💵 نولون الشحن الدولي الكلي المستحق</h4><p>${t_usd:,.2f}</p></div>
+            <div class="erp-card"><h4>📦 إجمالي الحاويات المسجلة</h4><p>{t_cont} شحنة</p></div>
+            <div class="erp-card"><h4>💵 إجمالي ذمم أوامر التسليم</h4><p>{t_lyd:,.2f} د.ل</p></div>
+            <div class="erp-card"><h4>💵 إجمالي مطلوب نولون الشحن</h4><p>${t_usd:,.2f}</p></div>
         </div>
         """, unsafe_allow_html=True)
         
-        # لوحة الفلاتر والمحرك الذكي الجديد بالكامل (تلبية للنقاط 1 و 2 و 4)
-        with st.expander("⚙️ محرك تحديد هيكلية التقارير وعمليات الفرز الانتقائي", expanded=True):
+        # لوحة الفلاتر والمحرك الذكي
+        with st.expander("⚙️ محرك تحديد هيكلية التقارير وعمليات الفرز", expanded=True):
             c_filter1, c_filter2, c_filter3 = st.columns(3)
             with c_filter1:
                 report_scope = st.radio("1. حدد نطاق كشف الحساب:", ["كل زبائن المنظومة", "زبون محدد فردي"], horizontal=True)
             with c_filter2:
                 report_structure = st.radio("2. حدد نوع وثيقة الكشف:", ["كشف مالي إجمالي عام", "كشف حساب تفصيلي"], horizontal=True)
             with c_filter3:
-                display_profit = st.checkbox("إظهار قيم شحن الوكالة وصافي الأرباح الداخلية للشركة", value=False)
+                display_profit = st.checkbox("إظهار قيم شحن الوكالة وصافي الأرباح الداخلية", value=False)
                 
             st.write("---")
             if report_scope == "زبون محدد فردي":
@@ -197,7 +201,7 @@ if menu == "📊 لوحة التحكم والتقارير":
 
         st.write("---")
 
-        # 🟢 [تلبية النقطتين 1 & 2 بالكامل]: بناء وتوليد الكشوفات الأربعة وتصدير الإكسل الصافي المضمون
+        # 🟢 بناء وتوليد الكشوفات الأربعة بناءً على اختيار المستخدم
         df_export_target = pd.DataFrame()
         
         if report_scope == "كل زبائن المنظومة":
@@ -213,13 +217,12 @@ if menu == "📊 لوحة التحكم والتقارير":
                     p_usd = cust_r[cust_r['currency'] == 'دولار أمريكي USD']['amount'].sum() if not cust_r.empty else 0.0
                     
                     global_summary.append({
-                        "اسم الزبون": cust, "عدد الحاويات": len(cust_s), 
+                        "اسم الزبون": cust, "الحاويات": len(cust_s), 
                         "المطلوب (د.ل)": r_lyd, "المدفوع (د.ل)": p_lyd, "المتبقي (د.ل)": r_lyd - p_lyd, 
                         "الشحن ($)": r_usd, "المدفوع ($)": p_usd, "المتبقي ($)": r_usd - p_usd
                     })
                 df_export_target = pd.DataFrame(global_summary)
                 
-                # حل قاطع وتثبيت الـ KeyError: توحيد مسميات الهيدر 100% مع مخرجات الحساب
                 th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "الحاويات", "المطلوب (د.ل)", "المدفوع (د.ل)", "المتبقي (د.ل)", "الشحن ($)", "المدفوع ($)", "المتبقي ($)"])
                 tr_html = ""
                 for _, r in df_export_target.iterrows():
@@ -231,7 +234,6 @@ if menu == "📊 لوحة التحكم والتقارير":
                 df_export_target['profit_usd'] = df_export_target['final_freight_usd'] - df_export_target['agency_freight_usd']
                 render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
         else:
-            # فلترة حساب زبون محدد
             df_cust_s = shipments_all[shipments_all['customer_name'] == target_customer].copy()
             df_cust_r = receipts_all[receipts_all['customer_name'] == target_customer]
             r_lyd = df_cust_s['do_value_lyd'].sum() if not df_cust_s.empty else 0.0
@@ -244,15 +246,15 @@ if menu == "📊 لوحة التحكم والتقارير":
                 k1, k2 = st.columns(2)
                 with k1:
                     st.markdown(f"""<div class='metric-card' style='border-right-color: #2196f3;'>
-                        <h5>💵 ذمم أوامر التسليم بالدينار الليبي:</h5>
+                        <h5>💵 حساب أوامر التسليم بالدينار الليبي:</h5>
                         <p>إجمالي المطلوب: <b>{r_lyd:,.2f} د.ل</b> | المدفوع: <b style='color:green;'>{p_lyd:,.2f} د.ل</b></p>
                         <p>المتبقي بذمته جاري: <b style='color:red;'>{r_lyd - p_lyd:,.2f} د.ل</b></p>
                     </div>""", unsafe_allow_html=True)
                 with k2:
                     st.markdown(f"""<div class='metric-card' style='border-right-color: #4caf50;'>
-                        <h5>💵 مطلوب نولون الشحن بالدولار الأمريكي:</h5>
-                        <p>إجمالي المطلوب: <b>${req_usd:,.2f}</b> | المدفوع: <b style='color:green;'>${paid_usd:,.2f}</b></p>
-                        <p>المتبقي بذمته جاري: <b style='color:red;'>${req_usd - paid_usd:,.2f}</b></p>
+                        <h5>💵 حساب نولون الشحن بالدولار الأمريكي:</h5>
+                        <p>إجمالي المطلوب: <b>${r_usd:,.2f}</b> | المدفوع: <b style='color:green;'>${p_usd:,.2f}</b></p>
+                        <p>المتبقي بذمته جاري: <b style='color:red;'>${r_usd - p_usd:,.2f}</b></p>
                     </div>""", unsafe_allow_html=True)
                 df_export_target = pd.DataFrame([{"اسم الزبون": target_customer, "المطلوب (د.ل)": r_lyd, "المدفوع (د.ل)": p_lyd, "المتبقي (د.ل)": r_lyd-p_lyd, "الشحن ($)": r_usd, "المدفوع ($)": p_usd, "المتبقي ($)": r_usd-p_usd}])
             else:
@@ -261,92 +263,63 @@ if menu == "📊 لوحة التحكم والتقارير":
                 df_export_target = df_cust_s.copy()
                 render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
 
-        # زر تحميل الإكسل النشط والمنظم
+        # زر تحميل الإكسل للبيانات المعروضة
         if not df_export_target.empty:
             st.write("")
-            st.download_button(label="📥 تحميل كشف الحساب النشط حالياً بصيغة Excel معتمد", data=to_excel(df_export_target), file_name=f"istabraq_statement_{datetime.now().strftime('%Y%m%d')}.xlsx")
+            st.download_button(label="📥 تحميل الكشف المعروض حالياً بصيغة Excel", data=to_excel(df_export_target), file_name=f"istabraq_statement_{datetime.now().strftime('%Y%m%d')}.xlsx")
 
-        # ==================== 🖨️ [تلبية النقطة 5]: محرك التوليد والطباعة العمودية اللامتناهية الصفحات A4 Portrait ====================
+        # ==================== 🖨️ محرك الطباعة المباشرة والشاملة للمستند المعروض بالكامل ====================
         st.write("---")
-        st.markdown("### 🖨️ محرك توليد وتصديق كشوفات الحساب الرسمية للطباعة العمودية اللامتناهية:")
-        st.markdown("<p style='font-size:14px; color:#666;'>💡 <b>ميزة فرز وحصر الطباعة:</b> يمكنك تحديد حاويات منتقاة معينة من صندوق الاختيار أدناه (مثلاً 5 حاويات من أصل 50) وسيتم بناء كشف حساب جمركي مخصص لها ومحمي تماماً ضد التشويه وبياض الورقة عند الطباعة.</p>", unsafe_allow_html=True)
+        st.markdown("### 🖨️ محرك التوليد والطباعة العمودية المباشرة:")
+        st.markdown("<p style='font-size:14px; color:#666;'>💡 اضغط على زر التوليد أدناه لتحويل <b>كامل الكشف المعروض أعلاه</b> إلى وثيقة رسمية متصلة الصفحات، ثم اضغط <b>Ctrl + P</b>.</p>", unsafe_allow_html=True)
         
-        df_print_source = shipments_all[shipments_all['customer_name'] == target_customer].copy() if report_scope == "زبون محدد فردي" else shipments_all.copy()
-        df_print_source['print_label'] = "معرف الشحنة [" + df_print_source['id'].astype(str) + "] | بوليصة: " + df_print_source['bl_number'] + " | حاوية: " + df_print_source['container_number'] + " (" + df_print_source['customer_name'] + ")"
-        
-        selected_print_items = st.multiselect(
-            "اضغط هنا واختر الحاويات/البوالص الدقيقة المراد إدراجها داخل وثيقة الطباعة (اترك الخانة فارغة لطباعة الكشف المعروض بالكامل تلقائياً):",
-            options=df_print_source['print_label'].tolist()
-        )
-        
-        if selected_print_items:
-            df_print_final = df_print_source[df_print_source['print_label'].isin(selected_print_items)]
-        else:
-            df_print_final = df_print_source.copy()
-            
-        st.write("")
-        btn_print_trigger = st.button("🖨️ تأكيد معالجة وتوليد وثيقة كشف الحساب للطباعة الفورية")
+        btn_print_trigger = st.button("🖨️ تأكيد واعتماد الكشف المعروض للطباعة الفورية")
         
         if btn_print_trigger:
-            st.success("🎉 تم توليد الوثيقة الرسمية بنجاح! اضغط الآن من لوحة المفاتيح على Ctrl + P لبدء الطباعة أو الحفظ كـ PDF فخم.")
+            st.success("🎉 تم تجهيز الوثيقة بنجاح! اضغط الآن من لوحة المفاتيح على Ctrl + P لبدء الطباعة المتعددة الصفحات.")
             
-            p_total_lyd = df_print_final['do_value_lyd'].sum()
-            p_total_usd = df_print_final['final_freight_usd'].sum()
-            
-            # بناء كود الـ HTML بربط متتالي صريح بدون مسافات بادئة (Tabs) نهائياً لمنع التفسير الخاطئ للمتصفح
-            rows_html_p = ""
-            for _, r in df_print_final.iterrows():
-                agency_td_p = f"<td>${r['agency_freight_usd']:,.2f}</td>" if display_profit else ""
-                profit_td_p = f"<td>${(r['final_freight_usd'] - r['agency_freight_usd']):,.2f}</td>" if display_profit else ""
-                rows_html_p += "<tr>"
-                rows_html_p += f"<td>{r['customer_name']}</td>"
-                rows_html_p += f"<td>{r['bl_number']}</td>"
-                rows_html_p += f"<td>{r['container_number']}</td>"
-                rows_html_p += f"<td>{r['shipment_date']}</td>"
-                rows_html_p += f"<td>{r['do_number']}</td>"
-                rows_html_p += f"<td>{r['do_value_lyd']:,.2f} د.ل</td>"
-                rows_html_p += f"<td>${r['final_freight_usd']:,.2f}</td>"
-                if display_profit:
-                    rows_html_p += agency_td_p + profit_td_p
-                rows_html_p += "</tr>"
+            # بناء كود الـ HTML المخصص للطباعة بناءً على نوع التقرير المختار
+            if report_structure == "كشف مالي إجمالي عام":
+                p_total_lyd = df_export_target['المطلوب (د.ل)'].sum()
+                p_total_usd = df_export_target['الشحن ($)'].sum()
                 
-            th_agency_print = "<th>شحن الوكالة</th>" if display_profit else ""
-            th_profit_print = "<th>صافي الربح</th>" if display_profit else ""
-            
+                rows_html_p = ""
+                for _, r in df_export_target.iterrows():
+                    rows_html_p += f"<tr><td>{r['اسم الزبون']}</td><td>{r['المطلوب (د.ل)']:,.2f} د.ل</td><td>{r['المدفوع (د.ل)']:,.2f} د.ل</td><td>{r['المتبقي (د.ل)']:,.2f} د.ل</td><td>${r['الشحن ($)']:,.2f}</td><td>${r['المدفوع ($)']:,.2f}</td><td>${r['المتبقي ($)']:,.2f}</td></tr>"
+                    
+                table_headers = "<th>اسم الزبون</th><th>المطلوب (د.ل)</th><th>المدفوع (د.ل)</th><th>المتبقي (د.ل)</th><th>الشحن ($)</th><th>المدفوع ($)</th><th>المتبقي ($)</th>"
+                doc_type_text = "كشف أرصاد مالي إجمالي"
+                
+            else:
+                p_total_lyd = df_export_target['do_value_lyd'].sum()
+                p_total_usd = df_export_target['final_freight_usd'].sum()
+                
+                rows_html_p = ""
+                for _, r in df_export_target.iterrows():
+                    agency_td_p = f"<td>${r['agency_freight_usd']:,.2f}</td>" if display_profit else ""
+                    profit_td_p = f"<td>${r['profit_usd']:,.2f}</td>" if display_profit else ""
+                    rows_html_p += f"<tr><td>{r['customer_name']}</td><td>{r['bl_number']}</td><td>{r['container_number']}</td><td>{r['shipment_date']}</td><td>{r['do_number']}</td><td>{r['do_value_lyd']:,.2f} د.ل</td><td>${r['final_freight_usd']:,.2f}</td>{agency_td_p}{profit_td_p}</tr>"
+                    
+                th_agency_print = "<th>شحن الوكالة</th>" if display_profit else ""
+                th_profit_print = "<th>صافي الربح</th>" if display_profit else ""
+                table_headers = f"<th>اسم الزبون</th><th>رقم البوليصة</th><th>رقم الحاوية</th><th>التاريخ</th><th>رقم أمر التسليم</th><th>قيمة أمر التسليم</th><th>الشحن النهائي</th>{th_agency_print}{th_profit_print}"
+                doc_type_text = "كشف حاويات تفصيلي معتمد ومصفى"
+
             html_document_payload = "<div class='official-print-document'>"
             html_document_payload += "<div class='document-corporate-header'><h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1><p style='margin:5px 0 0 0; color:#555; font-size:14px;'>مصراتة - ليبيا | الحسابات المركزية المعتمدة</p></div>"
             html_document_payload += "<table class='document-meta-table'>"
-            html_document_payload += f"<tr><td><b>كشف حساب مالي جاري للعميل:</b> {target_customer if report_scope == 'زبون محدد فردي' else 'كافة عملاء المنظومة'}</td><td style='text-align: left;'><b>تاريخ استخراج الوثيقة:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</td></tr>"
-            html_document_payload += f"<tr><td><b>نوع المستند الجمركي:</b> كشف حساب حاويات تفصيلي معتمد ومصفى</td><td style='text-align: left;'><b>حصر عدد الحاويات المدرجة:</b> {len(df_print_final)} حاوية جارية</td></tr>"
+            html_document_payload += f"<tr><td><b>الحساب المالي للعميل:</b> {target_customer if report_scope == 'زبون محدد فردي' else 'كافة عملاء المنظومة'}</td><td style='text-align: left;'><b>تاريخ استخراج الوثيقة:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</td></tr>"
+            html_document_payload += f"<tr><td><b>نوع المستند الجمركي:</b> {doc_type_text}</td><td style='text-align: left;'><b>حصر السجلات المدرجة:</b> {len(df_export_target)} سجل جاري</td></tr>"
             html_document_payload += "</table>"
-            html_document_payload += f"<table class='document-items-table'><thead><tr><th>اسم الزبون</th><th>رقم البوليصة</th><th>رقم الحاوية</th><th>التاريخ</th><th>رقم أمر التسليم</th><th>قيمة أمر التسليم</th><th>الشحن النهائي</th>{th_agency_print}{th_profit_print}</tr></thead>"
-            html_document_payload += f"<tbody>{rows_html_p}</tbody></table>"
+            html_document_payload += f"<table class='document-items-table'><thead><tr>{table_headers}</tr></thead><tbody>{rows_html_p}</tbody></table>"
             html_document_payload += "<div class='document-totals-box'>"
-            html_document_payload += f"<div style='width:100%; text-align:left; font-size:16px; margin-bottom:8px; color:#000;'><b>إجمالي صافي قيمة أوامر التسليم المستحقة للتحصيل:</b> {p_total_lyd:,.2f} دينار ليبي</div>"
-            html_document_payload += f"<div style='width:100%; text-align:left; font-size:16px; color:#000;'><b>إجمالي مطلوب نولون الشحن الدولي المستحق للتحصيل:</b> ${p_total_usd:,.2f} دولار أمريكي</div>"
+            html_document_payload += f"<div style='width:100%; text-align:left; font-size:16px; margin-bottom:8px; color:#000;'><b>إجمالي المطلوب الكلي (أوامر التسليم):</b> {p_total_lyd:,.2f} دينار ليبي</div>"
+            html_document_payload += f"<div style='width:100%; text-align:left; font-size:16px; color:#000;'><b>إجمالي المطلوب الكلي (نولون الشحن):</b> ${p_total_usd:,.2f} دولار أمريكي</div>"
             html_document_payload += "</div>"
             html_document_payload += "<div class='document-signatures-area'><div>توقيع واعتماد الحسابات المركزية: .........................</div><div>خِتم وتصديق الشركة الرسمي: .........................</div></div>"
             html_document_payload += "</div>"
             
             st.markdown(html_document_payload, unsafe_allow_html=True)
-
-        # ==================== 🛠️ [تلبية النقطة 3]: لوحة التعديل السريع المضمونة المستقلة عن عيوب النقرات المزعجة ====================
-        if report_scope == "زبون محدد فردي" and not df_cust_s.empty:
-            st.write("---")
-            st.markdown("### 🛠️ لوحة إجراء التعديلات السريعة واستكمال بيانات الحاويات الناقصة:")
-            
-            selected_edit_item = st.selectbox(
-                "اختر رقم الحاوية/البوليصة المراد تعديل أو إكمال قيمها المالية السحابية الآن:",
-                options=df_cust_s['print_label'].tolist(),
-                key="dashboard_quick_edit_box"
-            )
-            
-            if selected_edit_item:
-                df_target_row = df_cust_s[df_cust_s['print_label'] == selected_edit_item].iloc[0]
-                target_record_id = int(df_target_row['id'])
-                
-                if st.button("📝 فتح استمارة التحديث السحابي الفوري للحاوية المختارة"):
-                    edit_container_modal(target_record_id)
 
 # ----------------- باقي الأقسام اللوجستية والمالية للمنظومة -----------------
 elif menu == "⚠️ الحاويات غير المكتملة":
