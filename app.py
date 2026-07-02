@@ -22,7 +22,7 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
 
-/* إعادة صياغة الخطوط والاتجاهات الافتراضية */
+/* إعادة صياغة الخطوط والاتجاهات الافتراضية بمفهوم آبل */
 html, body, [data-testid="stSidebar"], .stApp {
     font-family: 'Cairo', sans-serif;
     direction: rtl !important;
@@ -36,18 +36,50 @@ html, body, [data-testid="stSidebar"], .stApp {
     direction: rtl !important;
 }
 
-/* إخفاء عناصر ستريمليت الافتراضية غير الضرورية للمظهر الاحترافي */
+/* إخفاء عناصر ستريمليت الافتراضية غير الضرورية للمظهر الاحترافي للموقع */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 [data-testid="stHeader"] {background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid #e2e8f0;}
 
 /* تخصيص مظهر القائمة الجانبية الفاخرة */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #091e14 0%, #112a1f 100%) !important;
+    background: linear-gradient(180deg, #021a11 0%, #062c1d 100%) !important;
     border-left: 1px solid rgba(255, 255, 255, 0.05);
 }
 [data-testid="stSidebar"] * {
     color: #f8fafc !important;
+}
+[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] {
+    background-color: #114631 !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 10px !important;
+}
+[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] * {
+    color: #f8fafc !important;
+}
+
+/* تخصيص مظهر علامات التبويب (Tabs) */
+div[data-testid="stTabBar"] {
+    background-color: #ffffff;
+    padding: 6px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-bottom: 25px;
+    border: 1px solid #e2e8f0;
+}
+div[data-testid="stTabBar"] button {
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    color: #475569 !important;
+    border-radius: 10px !important;
+    padding: 8px 24px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border: none !important;
+}
+div[data-testid="stTabBar"] button[aria-selected="true"] {
+    background-color: #1a5f43 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(26, 95, 67, 0.15) !important;
 }
 
 /* بطاقات الموقف المالي الراقية (Enterprise KPI Cards) */
@@ -73,7 +105,7 @@ footer {visibility: hidden;}
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 .kpi-card h5 { margin: 0 0 8px 0 !important; color: #64748b !important; font-size: 12px !important; font-weight: 700 !important; text-transform: uppercase; }
-.kpi-card h2 { margin: 0 !important; font-size: 24px !important; font-weight: 850 !important; color: #112a1f !important; }
+.kpi-card h2 { margin: 0 !important; font-size: 24px !important; font-weight: 850 !important; color: #114631 !important; }
 .kpi-card p { margin: 6px 0 0 0 !important; font-size: 11px !important; color: #94a3b8 !important; }
 
 /* تصميم الجداول الذكية المستقرة والراقية */
@@ -94,12 +126,12 @@ table.corporate-data-table {
     text-align: right !important;
 }
 table.corporate-data-table th {
-    background-color: #112a1f !important;
+    background-color: #062c1d !important;
     color: #ffffff !important;
     padding: 14px 16px;
     font-weight: 700;
     font-size: 13px;
-    border-bottom: 2px solid #091e14;
+    border-bottom: 2px solid #021a11;
     white-space: nowrap;
     text-align: right !important;
 }
@@ -117,7 +149,7 @@ table.corporate-data-table tr:hover { background-color: #f1f5f9; }
 
 /* أزرار الإجراءات والتحكم بتصميم Apple الموحد */
 div.stButton > button:first-child {
-    background-color: #112a1f !important;
+    background-color: #1a5f43 !important;
     color: #ffffff !important;
     font-weight: 700 !important;
     width: 100% !important;
@@ -125,11 +157,11 @@ div.stButton > button:first-child {
     height: 44px !important;
     border: none !important;
     font-size: 14px !important;
-    box-shadow: 0 4px 6px -1px rgba(17, 42, 31, 0.12) !important;
+    box-shadow: 0 4px 6px -1px rgba(26, 95, 67, 0.12) !important;
     transition: all 0.2s ease !important;
 }
 div.stButton > button:hover { 
-    background-color: #1a3f2f !important; 
+    background-color: #227855 !important; 
     transform: translateY(-1px);
 }
 
@@ -222,7 +254,7 @@ def to_excel(df):
 
 
 # ==============================================================================
-# 5. شريط التنقل الجانبي المطور والمنظم (Floating Department Selector)
+# 5. شريط التنقل الجانبي المطور والمنظم (Segmented Selector)
 # ==============================================================================
 st.sidebar.markdown(
     """
@@ -420,11 +452,10 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
-            # --- محرك الطباعة المعزولة العبقري والمضمون 100% ---
+            # --- محرك الطباعة المعزولة العبقري لمنع الفراغات والهوامش ---
             st.write("---")
-            st.markdown("### 🖨️ وثيقة تصديق ومطابقة كشوفات الحساب المعتمدة للطباعة:")
+            st.markdown("### 🖨️ وثيقة تصديق ومطابقة كشوفات الحساب المعتمدة للطباعة (A4):")
             
-            # بناء كود الـ HTML المخصص للطباعة
             rows_html_print = ""
             if report_structure == "كشف مالي إجمالي عام" and report_scope == "كل زبائن المنظومة":
                 table_headers = "<th>اسم الزبون</th><th>عدد الحاويات</th><th>المطلوب (د.ل)</th><th>المدفوع (د.ل)</th><th>المتبقي الجاري (د.ل)</th><th>الشحن ($)</th><th>المدفوع ($)</th><th>المتبقي الجاري ($)</th>"
@@ -488,7 +519,7 @@ if menu == "📊 الإدارة والتقرير المالي العام":
             <body onload='window.print()'>
                 <div class='header'>
                     <h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1>
-                    <p>مصراتة - ليبيا | الهاتف: 0910000000 | الحسابات المركزية المعتمدة</p>
+                    <p>مصراتة - ليبيا | الهاتف: 0912185571 - 0912185571 - 0912185569 | الحسابات المركزية المعتمدة</p>
                 </div>
                 <table class='meta-table'>
                     <tr>
@@ -513,14 +544,14 @@ if menu == "📊 الإدارة والتقرير المالي العام":
             </html>
             """.replace("\n", " ").replace("'", "\\'")
 
-            # زر الطباعة الذكي الذي يفتح نافذة معزولة تماماً ويطبعها بشكل مثالي
+            # زر الطباعة الذكي الذي يفتح نافذة معزولة تماماً ويطبعها بشكل مثالي دون هوامش فراغات علوية
             st.components.v1.html(f"""
                 <button onclick="
                     var win = window.open('', '_blank');
                     win.document.write('{print_html_content}');
                     win.document.close();
                 " style="
-                    background-color: #112a1f;
+                    background-color: #1a5f43;
                     color: white;
                     border: none;
                     padding: 12px 24px;
@@ -530,14 +561,14 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     cursor: pointer;
                     width: 100%;
                     font-family: 'Cairo', sans-serif;
-                    box-shadow: 0 4px 6px -1px rgba(17, 42, 31, 0.12);
+                    box-shadow: 0 4px 6px -1px rgba(26, 95, 67, 0.12);
                 ">🖨️ تشغيل معالج طباعة كشف الحساب المعزول (A4 Portrait)</button>
             """, height=60)
 
     # --- علامة التبويب الثانية: محرك فحص النواقص الجمركية الجريء ---
     with tab_audit:
         st.subheader("🔍 محرك حصر ومتابعة الشحنات ناقصة البيانات")
-        st.markdown("يقوم هذا المحرك بفلترة الحاويات التي تفتقر لأي قيم مالية أو بيانات تسليم لتسهيل معالجتها ومراجعتها.")
+        st.markdown("يقوم هذا المحرك بفرز وحصر الحاويات التي تفتقر لأي قيم مالية أو بيانات تسليم لتسهيل معالجتها ومراجعتها.")
         
         if shipments_all.empty:
             st.success("🎉 قاعدة البيانات خالية تماماً من الشحنات حالياً.")
@@ -552,7 +583,7 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                         [
                             "رقم الحاوية مفقود / فارغ",
                             "رقم البوليصة مفقود / فارغ",
-                            "تاريخ الاستلام غير محدد",
+                            "تاريخ الاستلام غير حدد",
                             "رقم إذن التسليم (D.O) مفقود / فارغ",
                             "قيمة أمر التسليم غير مدخلة (صفر)",
                             "شحن الوكالة غير مسعر ($0)",
@@ -576,7 +607,7 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     masks.append(df_audit['container_number'].isna() | (df_audit['container_number'].astype(str).str.strip() == ""))
                 if "رقم البوليصة مفقود / فارغ" in incomplete_criteria:
                     masks.append(df_audit['bl_number'].isna() | (df_audit['bl_number'].astype(str).str.strip() == ""))
-                if "تاريخ الاستلام غير محدد" in incomplete_criteria:
+                if "تاريخ الاستلام غير حدد" in incomplete_criteria:
                     masks.append(df_audit['shipment_date'].isna() | (df_audit['shipment_date'].astype(str).str.strip() == ""))
                 if "رقم إذن التسليم (D.O) مفقود / فارغ" in incomplete_criteria:
                     masks.append(df_audit['do_number'].isna() | (df_audit['do_number'].astype(str).str.strip() == ""))
@@ -747,7 +778,7 @@ elif menu == "🚢 حركة الحاويات والشحنات":
                         finally:
                             conn.close()
 
-    # --- استيراد ملفات الإكسل الذكي ---
+    # --- استيراد الإكسل ---
     with tab_excel_u:
         st.subheader("📥 معالج رفع البيانات تلقائياً وتوطينها من ملف Excel")
         st.info("ℹ️ تأكد من مطابقة ترويسة الحقول أو قم بمطابقتها يدوياً عبر محرك الربط الذكي بالأسفل.")
@@ -833,7 +864,7 @@ elif menu == "🚢 حركة الحاويات والشحنات":
             except Exception as e:
                 st.error(f"❌ حدث خطأ فني أثناء قراءة ومعالجة الملف: {e}")
 
-    # --- تعديل وحذف الشحنات الفردية ---
+    # --- مراجعة وتعديل وحذف الشحنات ---
     with tab_modify:
         st.subheader("📝 مراجعة وتحديث القيود والشحنات الفردية")
         if shipments.empty:
@@ -917,7 +948,7 @@ elif menu == "🚢 حركة الحاويات والشحنات":
 
 
 # ==============================================================================
-# البوابة الثالثة: الخزينة والتحصيلات المالية وسندات القبض
+# البوابة الثالثة: الخزينة والتحصيلات المالية
 # ==============================================================================
 elif menu == "💵 الخزينة والتحصيلات المالية":
     tab_add_rec, tab_edit_rec = st.tabs(["💰 تسجيل إيصال قبض جديد", "✏️ تعديل وحذف إيصالات الخزينة"])
@@ -937,7 +968,7 @@ elif menu == "💵 الخزينة والتحصيلات المالية":
         if customers_df.empty:
             st.warning("⚠️ يرجى إضافة حساب زبون مسجل واحد على الأقل أولاً لتتمكن من إدراج المبالغ المالية.")
         else:
-            st.write("➕ تحرير وتسجيل إيصال سداد مالي جديد")
+            st.subheader("➕ تحرير وتسجيل إيصال سداد مالي جديد")
             with st.form("receipt_form", clear_on_submit=True):
                 rc1, rc2, rc3 = st.columns(3)
                 with rc1: 
@@ -972,7 +1003,7 @@ elif menu == "💵 الخزينة والتحصيلات المالية":
                         finally:
                             conn.close()
 
-    # --- مراجعة وتعديل إيصالات الخزينة ---
+    # --- تعديل وحذف الإيصالات ---
     with tab_edit_rec:
         st.subheader("✏️ مراجعة والتحكم في إيصالات وسندات المقبوضات")
         if receipts_all.empty:
@@ -1048,7 +1079,7 @@ elif menu == "💵 الخزينة والتحصيلات المالية":
 
 
 # ==============================================================================
-# البوابة الرابعة: شؤون الزبائن وصيانة النظام (CRM + Wipe Options)
+# البوابة الرابعة: شؤون الزبائن وصيانة النظام
 # ==============================================================================
 elif menu == "⚙️ شؤون الزبائن وصيانة النظام":
     tab_crm, tab_system = st.tabs(["👥 إدارة وحسابات الزبائن CRM", "💥 تصفير وصيانة المنظومة المجمعة"])
