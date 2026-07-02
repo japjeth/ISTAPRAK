@@ -183,7 +183,6 @@ div[data-testid="stTabBar"] button[aria-selected="true"] {
 # 3. إدارة الاتصال الآمن والذكي بقاعدة البيانات السحابية مع نظام المحاكاة الاحتياطي
 # ==============================================================================
 def get_db_connection():
-    # استخدام نظام محاكاة في حالة عدم وجود تهيئة سحابية لـ secrets منعاً للأخطاء والانهيار
     if "postgres" not in st.secrets:
         return None
     try:
@@ -256,7 +255,6 @@ init_db()
 def db_query(query, params=None, fetch=True):
     conn = get_db_connection()
     if conn is None:
-        # معالجة استعلامات المحاكاة في حال غياب الاتصال بقاعدة البيانات السحابية
         if "SELECT * FROM customers" in query:
             return st.session_state["mock_db"]["customers"]
         elif "SELECT * FROM shipments" in query:
@@ -269,7 +267,6 @@ def db_query(query, params=None, fetch=True):
         with conn.cursor() as cursor:
             cursor.execute(query, params)
             if fetch:
-                # تحويل النتائج إلى قواميس متوافقة
                 columns = [desc[0] for desc in cursor.description]
                 return [dict(zip(columns, row)) for row in cursor.fetchall()]
             conn.commit()
@@ -283,7 +280,6 @@ def db_query(query, params=None, fetch=True):
 def db_execute(query, params=None):
     conn = get_db_connection()
     if conn is None:
-        # تنفيذ التعديلات اليدوية على قاعدة بيانات المحاكاة النشطة بالذاكرة فورياً
         if "INSERT INTO customers" in query:
             new_id = len(st.session_state["mock_db"]["customers"]) + 1
             st.session_state["mock_db"]["customers"].append({"id": new_id, "name": params[0]})
@@ -302,7 +298,6 @@ def db_execute(query, params=None):
             })
         elif "UPDATE shipments SET" in query:
             for s in st.session_state["mock_db"]["shipments"]:
-                # معالجة الاستكمال السريع للحاويات ناقصة البيانات
                 if s["id"] == params[-1]:
                     s["container_number"] = params[0]
                     s["bl_number"] = params[1]
@@ -440,9 +435,13 @@ if menu == "📊 الإدارة والتقرير المالي العام":
     shipments_list = db_query("SELECT * FROM shipments ORDER BY id DESC")
     receipts_list = db_query("SELECT * FROM receipts ORDER BY id DESC")
     
-    customers_df = pd.DataFrame(customers_list)
-    shipments_all = pd.DataFrame(shipments_list)
-    receipts_all = pd.DataFrame(receipts_list)
+    customers_df = pd.DataFrame(customers_list) if customers_list else pd.DataFrame(columns=['id', 'name'])
+    shipments_all = pd.DataFrame(shipments_list) if shipments_list else pd.DataFrame(columns=['id', 'customer_name', 'container_number', 'bl_number', 'shipment_date', 'do_number', 'do_value_lyd', 'agency_freight_usd', 'final_freight_usd'])
+    receipts_all = pd.DataFrame(receipts_list) if receipts_list else pd.DataFrame(columns=['id', 'customer_name', 'amount', 'currency', 'receipt_date', 'notes'])
+
+    # التهيئة المسبقة والآمنة لمتغير التصدير تلافياً لخطأ NameError المذكور في صورة image_961242.png
+    df_export_target = pd.DataFrame()
+    target_customer = "الكل"
 
     # --- علامة التبويب الأولى: التقارير وكشوف الحساب ---
     with tab_reports:
@@ -478,10 +477,9 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                 else:
                     target_customer = "الكل"
 
-            df_export_target = pd.DataFrame()
             req_l, paid_l, req_u, paid_u = 0.0, 0.0, 0.0, 0.0
             
-            if report_scope == "كل زبائن المنظومة":
+            if report_scope == "كل زبائن المنظومة" and not customers_df.empty:
                 if report_structure == "كشف مالي إجمالي عام":
                     st.subheader("📋 كشف ملخص أرصاد الحسابات لكافة الزبائن")
                     
@@ -512,7 +510,7 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     df_export_target['remaining_lyd'] = df_export_target['required_lyd'] - df_export_target['paid_lyd']
                     df_export_target['remaining_usd'] = df_export_target['required_usd'] - df_export_target['paid_usd']
                     
-                    th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "الحاويات", "المطلوب (د.ل)", "المدفوع (د.ل)", "المتبقي الجاري (د.ل)", "الشحن نولون ($)", "المدفوع ($)", "المتبقي ($)"])
+                    th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "الحاويات", "المطلوب (د.ل)", "المدفوع (د.ل)", "المتبقي الجاري (د.ل)", "نولون الشحن ($)", "المدفوع ($)", "المتبقي ($)"])
                     tr_html = ""
                     for _, r in df_export_target.iterrows():
                         tr_html += (
@@ -543,9 +541,9 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     req_u = df_export_target['final_freight_usd'].sum()
                     paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum() if not receipts_all.empty else 0.0
                     paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum() if not receipts_all.empty else 0.0
-            else:
-                df_cust_s = shipments_all[shipments_all['customer_name'] == target_customer].copy()
-                df_cust_r = receipts_all[receipts_all['customer_name'] == target_customer].copy()
+            elif not customers_df.empty:
+                df_cust_s = shipments_all[shipments_all['customer_name'] == target_customer].copy() if not shipments_all.empty else pd.DataFrame()
+                df_cust_r = receipts_all[receipts_all['customer_name'] == target_customer].copy() if not receipts_all.empty else pd.DataFrame()
                 
                 req_l = df_cust_s['do_value_lyd'].sum() if not df_cust_s.empty else 0.0
                 req_u = df_cust_s['final_freight_usd'].sum() if not df_cust_s.empty else 0.0
@@ -558,10 +556,12 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
                 else:
                     st.subheader(f"📋 كشف الحاويات والقيود التفصيلي المعتمد لحساب: {target_customer}")
-                    df_cust_s['profit_usd'] = df_cust_s['final_freight_usd'] - df_cust_s['agency_freight_usd']
+                    if not df_cust_s.empty:
+                        df_cust_s['profit_usd'] = df_cust_s['final_freight_usd'] - df_cust_s['agency_freight_usd']
                     df_export_target = df_cust_s.copy()
                     render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
 
+            # تحريك وتأمين المحاذاة لكتلة زر التصدير والتحميل والطباعة (آمنة تماماً تلافياً للـ NameError)
             if not df_export_target.empty:
                 st.write("")
                 st.download_button(
@@ -571,10 +571,10 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
-            # --- وثيقة تصديق الطباعة المعزولة تماماً والخالية من الفراغات لورق A4 ---
-            st.write("---")
-            st.markdown("### 🖨️ وثيقة تصديق ومطابقة كشوفات الحساب الرسمية للطباعة:")
-            if st.button("🖨️ تأكيد معالجة وتوليد وثيقة كشف الحساب للطباعة الفورية المعتمدة"):
+                # --- وثيقة تصديق الطباعة المعزولة تماماً والخالية من الفراغات لورق A4 ---
+                st.write("---")
+                st.markdown("### 🖨️ وثيقة تصديق ومطابقة كشوفات الحساب الرسمية للطباعة:")
+                
                 rows_html_p = ""
                 if report_structure == "كشف مالي إجمالي عام" and report_scope == "كل زبائن المنظومة":
                     table_headers = "<th>اسم الزبون</th><th>عدد الحاويات</th><th>المطلوب (د.ل)</th><th>المدفوع (د.ل)</th><th>المتبقي الجاري (د.ل)</th><th>الشحن ($)</th><th>المدفوع ($)</th><th>المتبقي الجاري ($)</th>"
@@ -626,7 +626,6 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     </tbody>
                 </table>"""
 
-                # كود الـ HTML المولد للطباعة المعزولة تماماً في نافذة منبثقة جديدة لمنع أي هوامش فارغة
                 print_html_content = f"""
                 <html>
                 <head>
@@ -833,8 +832,10 @@ elif menu == "🚢 حركة الحاويات والشحنات":
     
     customers_list = db_query("SELECT * FROM customers ORDER BY name ASC")
     shipments_list = db_query("SELECT * FROM shipments ORDER BY id DESC")
-    customers_df = pd.DataFrame(customers_df) if isinstance(customers_list, pd.DataFrame) else pd.DataFrame(customers_list)
-    shipments = pd.DataFrame(shipments_list) if isinstance(shipments_list, pd.DataFrame) else pd.DataFrame(shipments_list)
+    
+    # المعالجة الآمنة للـ DataFrames تلافياً لأخطاء التهيئة الأولية
+    customers_df = pd.DataFrame(customers_list) if customers_list else pd.DataFrame(columns=['id', 'name'])
+    shipments = pd.DataFrame(shipments_list) if shipments_list else pd.DataFrame(columns=['id', 'customer_name', 'container_number', 'bl_number', 'shipment_date', 'do_number', 'do_value_lyd', 'agency_freight_usd', 'final_freight_usd'])
 
     # --- إضافة بوليصة يدوياً ---
     with tab_manual:
@@ -948,7 +949,7 @@ elif menu == "🚢 حركة الحاويات والشحنات":
                             
                         for container in container_list:
                             existing = db_query("SELECT id FROM shipments WHERE container_number = %s AND bl_number = %s", (container, bl))
-                            if existing and len(existing) > 0:
+                            if existing:
                                 db_execute(
                                     'UPDATE shipments SET customer_name=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s', 
                                     (cust_name, date_str, new_do_num, new_do_val, new_agency, new_final, existing[0]['id'])
@@ -1039,8 +1040,9 @@ elif menu == "💵 الخزينة والتحصيلات المالية":
     
     customers_list = db_query("SELECT * FROM customers ORDER BY name ASC")
     receipts_list = db_query("SELECT * FROM receipts ORDER BY id DESC")
-    customers_df = pd.DataFrame(customers_list) if isinstance(customers_list, pd.DataFrame) else pd.DataFrame(customers_list)
-    receipts_all = pd.DataFrame(receipts_list) if isinstance(receipts_list, pd.DataFrame) else pd.DataFrame(receipts_list)
+    
+    customers_df = pd.DataFrame(customers_list) if customers_list else pd.DataFrame(columns=['id', 'name'])
+    receipts_all = pd.DataFrame(receipts_list) if receipts_list else pd.DataFrame(columns=['id', 'customer_name', 'amount', 'currency', 'receipt_date', 'notes'])
 
     # --- تسجيل إيصال قبض جديد بالخزينة ---
     with tab_add_rec:
@@ -1140,7 +1142,7 @@ elif menu == "⚙️ شؤون الزبائن وصيانة النظام":
     tab_crm, tab_system = st.tabs(["👥 إدارة وحسابات الزبائن CRM", "💥 تصفير وصيانة المنظومة المجمعة"])
     
     customers_list = db_query("SELECT * FROM customers ORDER BY name ASC")
-    customers_df = pd.DataFrame(customers_list) if isinstance(customers_list, pd.DataFrame) else pd.DataFrame(customers_list)
+    customers_df = pd.DataFrame(customers_list) if customers_list else pd.DataFrame(columns=['id', 'name'])
 
     # --- إدارة حسابات الزبائن CRM ---
     with tab_crm:
@@ -1189,7 +1191,7 @@ elif menu == "⚙️ شؤون الزبائن وصيانة النظام":
             if customers_df.empty:
                 st.info("لا توجد حسابات زبائن مسجلة حالياً.")
             else:
-                target_cust = st.selectbox("اختر اسم حساب العميل المرادر إزالة شحناته بالكامل وشطبها:", customers_df['name'], key="bulk_del_select")
+                target_cust = st.selectbox("اختر اسم حساب العميل المراد إزالة شحناته بالكامل وشطبها:", customers_df['name'], key="bulk_del_select")
                 cust_shipments = db_query("SELECT id, container_number, bl_number, do_number FROM shipments WHERE customer_name = %s", (target_cust,))
                 
                 if not cust_shipments:
