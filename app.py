@@ -7,7 +7,7 @@ import io
 import re
 
 # ==============================================================================
-# 1. إعداد الصفحة الأساسي بنسق عريض رصين وراقٍ
+# 1. إعداد الصفحة الأساسي بنسق عريض رصين وراقٍ بمفهوم Minimalist
 # ==============================================================================
 st.set_page_config(
     page_title="إستبرق الدولية - منظومة إدارة الشحنات والرقابة المالية",
@@ -16,19 +16,19 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# 2. حزمة الـ CSS العالمية المتطورة لثبات الـ RTL والطباعة الاحترافية المعزولة
+# 2. حزمة الـ CSS العالمية المتطورة لثبات الـ RTL والطباعة الاحترافية والجماليات الراقية
 # ==============================================================================
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
 
-/* تنسيق الواجهة العامة */
+/* تصميم الواجهة الجمالية المستوحى من Apple Design System */
 html, body, [data-testid="stSidebar"], .stApp {
     font-family: 'Cairo', sans-serif;
     direction: rtl !important;
     text-align: right !important;
     background-color: #f8fafc;
-    color: #1e293b;
+    color: #0f172a;
 }
 
 /* محاذاة النصوص والقوائم */
@@ -37,43 +37,69 @@ html, body, [data-testid="stSidebar"], .stApp {
     direction: rtl !important;
 }
 
-/* بطاقات المؤشرات المالية الفاخرة (ERP Metric Cards) */
+/* تخصيص مظهر علامات التبويب (Tabs) لتطابق مظهر الـ Segmented Control في Apple */
+div[data-testid="stTabBar"] {
+    background-color: #ffffff;
+    padding: 6px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-bottom: 25px;
+    border: 1px solid #e2e8f0;
+}
+div[data-testid="stTabBar"] button {
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    color: #475569 !important;
+    border-radius: 10px !important;
+    padding: 8px 24px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border: none !important;
+}
+div[data-testid="stTabBar"] button[aria-selected="true"] {
+    background-color: #112a1f !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(17, 42, 31, 0.15) !important;
+}
+
+/* بطاقات المؤشرات المالية الفاخرة (Apple Styled ERP Cards) */
 .kpi-container {
     display: flex;
-    gap: 16px;
+    gap: 20px;
     flex-wrap: wrap;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
     direction: rtl !important;
 }
 .kpi-card {
     flex: 1;
-    min-width: 240px;
+    min-width: 250px;
     background: #ffffff;
-    padding: 20px;
-    border-radius: 12px;
-    border-right: 5px solid #1b4332;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    transition: transform 0.2s ease;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 8px 24px rgba(148, 163, 184, 0.05);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .kpi-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(148, 163, 184, 0.1);
 }
 .kpi-card h5 { 
-    margin: 0 0 8px 0 !important; 
+    margin: 0 0 10px 0 !important; 
     color: #64748b !important; 
-    font-size: 13px !important; 
-    font-weight: 700 !important; 
+    font-size: 12.5px !important; 
+    font-weight: 800 !important; 
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 .kpi-card h2 { 
     margin: 0 !important; 
-    font-size: 26px !important; 
-    font-weight: 800 !important; 
-    color: #1b4332 !important; 
+    font-size: 28px !important; 
+    font-weight: 900 !important; 
+    color: #112a1f !important; 
 }
 .kpi-card p { 
-    margin: 6px 0 0 0 !important; 
-    font-size: 11px !important; 
+    margin: 8px 0 0 0 !important; 
+    font-size: 11.5px !important; 
     color: #94a3b8 !important; 
 }
 
@@ -82,10 +108,10 @@ html, body, [data-testid="stSidebar"], .stApp {
     width: 100%;
     overflow-x: auto;
     direction: rtl !important;
-    margin: 20px 0;
-    border-radius: 12px;
+    margin: 25px 0;
+    border-radius: 16px;
     border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
     background: #ffffff;
 }
 table.corporate-data-table {
@@ -95,126 +121,106 @@ table.corporate-data-table {
     text-align: right !important;
 }
 table.corporate-data-table th {
-    background-color: #1b4332 !important;
+    background-color: #112a1f !important;
     color: #ffffff !important;
-    padding: 14px 16px;
-    font-weight: 700;
-    font-size: 14px;
-    border-bottom: 3px solid #112a1f;
+    padding: 16px 20px;
+    font-weight: 800;
+    font-size: 14.5px;
+    border-bottom: 3px solid #091711;
     white-space: nowrap;
     text-align: right !important;
 }
 table.corporate-data-table td {
-    padding: 12px 16px;
+    padding: 14px 20px;
     text-align: right !important;
     border-bottom: 1px solid #f1f5f9;
     color: #334155;
-    font-size: 13.5px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
 }
 table.corporate-data-table tr:nth-child(even) { background-color: #f8fafc; }
 table.corporate-data-table tr:hover { background-color: #f1f5f9; }
 
-/* عناصر التحكم والمدخلات */
+/* عناصر التحكم والمدخلات الفاخرة */
 div.stButton > button:first-child {
-    background-color: #1b4332 !important;
+    background-color: #112a1f !important;
     color: #ffffff !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     width: 100% !important;
-    border-radius: 8px !important;
-    height: 44px !important;
+    border-radius: 12px !important;
+    height: 48px !important;
     border: none !important;
     font-size: 15px !important;
-    box-shadow: 0 4px 6px -1px rgba(27, 67, 50, 0.2) !important;
-    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 12px rgba(17, 42, 31, 0.15) !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 div.stButton > button:hover { 
-    background-color: #2d6a4f !important; 
-    transform: translateY(-1px);
+    background-color: #1a3f2f !important; 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(17, 42, 31, 0.25) !important;
 }
 
-/* الشارات الملونة للحالات */
+/* الشارات الملونه الدقيقة */
 .status-badge { 
-    padding: 4px 10px; 
-    border-radius: 6px; 
-    font-size: 11.5px; 
-    font-weight: 700; 
+    padding: 5px 12px; 
+    border-radius: 8px; 
+    font-size: 12px; 
+    font-weight: 800; 
     display: inline-block;
 }
-.status-green { background-color: #d8f3dc; color: #1b4332; }
+.status-green { background-color: #d1fae5; color: #065f46; }
 .status-red { background-color: #fee2e2; color: #991b1b; }
 .status-orange { background-color: #fef3c7; color: #92400e; }
 
-/* تخصيص مظهر الـ Sidebar */
+/* تخصيص مظهر الـ Sidebar (Apple Dark Sidebar Concept) */
 [data-testid="stSidebar"] {
-    background-color: #112a1f !important;
+    background-color: #0b1a13 !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
 }
 [data-testid="stSidebar"] * {
     color: #f8fafc !important;
 }
-[data-testid="stSidebar"] .stRadio label {
-    font-weight: 600 !important;
-    font-size: 14px !important;
+[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] {
+    background-color: #112a1f !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 10px !important;
+}
+[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] * {
+    color: #f8fafc !important;
 }
 
 /* ==============================================================================
  * 📜 هيكلية الطباعة المعزولة كلياً والمضمونة (Anti-Overlap Isolation CSS)
- * حل المشكلة الموضحة في صورة image_93eaad لضمان البدء من قمة الصفحة بالكامل وبدون تباعد
  * ============================================================================== */
 .official-print-document { display: none; }
 
 @media print {
-    /* 1. إخفاء كافة عناصر ستريمليت الهيكلية ومكونات الأكواد والتحكم تماماً لمنع الحشو والتباعد */
-    header, footer, [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stElementToolbar"],
-    div.stButton, div.stForm, div.stSelectbox, div.stMultiSelect, div.stRadio, .stExpander, .print-instruction,
-    .enterprise-table-container, .analytics-container, .no-print, [data-testid="stSidebarUserContent"],
-    .kpi-container, iframe, .stTabs, div[data-testid="stMarkdownContainer"] {
-        display: none !important;
-        height: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
+    /* إخفاء واجهة ستريمليت بالكامل بطريقة التمويه المرئي المضمون */
+    body * {
+        visibility: hidden !important;
     }
     
-    /* 2. طي وحذف مساحات السطور والكتل الرأسية الفارغة لتطبيق ستريمليت من التدفق المطبوع */
-    div[data-testid="stVerticalBlock"] > div { 
-        display: none !important; 
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
+    /* حصر وإظهار وثيقة كشف الحساب الرسمية بمفرده */
+    .official-print-document, .official-print-document * {
+        visibility: visible !important;
     }
     
-    /* إظهار فقط السطر الحاوي لوثيقة الطباعة الرسمية بمفرده */
-    div[data-testid="stVerticalBlock"] > div:has(.official-print-document) { 
-        display: block !important; 
-    }
-
-    /* 3. تنظيف الهوامش الخارجية للصفحة وحاوياتها لتوفير طباعة A4 محاذية للقمة بدقة */
-    [data-testid="stAppViewContainer"], .main, .block-container, [data-testid="stVerticalBlock"] {
-        padding: 0 !important;
-        margin: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        display: block !important;
-        overflow: visible !important;
-        height: auto !important;
-        background-color: #ffffff !important;
-    }
-
-    /* 4. تمثيل الهيدر والبادينج الرسمي لوثيقة كشف الحساب */
     .official-print-document {
         display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
         background-color: #ffffff !important;
         color: #000000 !important;
         padding: 10mm 10mm !important;
-        margin: 0 !important;
         direction: rtl !important;
         text-align: right !important;
-        width: 100% !important;
     }
 
     @page { 
         size: A4 portrait; 
-        margin: 0; /* تحكم كلي بالهوامش من خلال البادينج الداخلي لتفادي فجوات المتصفح */
+        margin: 15mm 10mm; 
     }
     
     .document-corporate-header {
@@ -261,7 +267,7 @@ div.stButton > button:hover {
         -webkit-print-color-adjust: exact; 
     }
     table.print-invoice-table td { 
-        border: 1px solid #000000 !important; 
+        border: 1px solid #cbd5e1 !important; 
         padding: 8px !important; 
         text-align: right !important; 
         color: #000000 !important; 
@@ -270,7 +276,7 @@ div.stButton > button:hover {
         page-break-inside: avoid !important; 
     }
     thead {
-        display: table-header-group !important; /* تكرار العناوين بالصفحات المتعددة */
+        display: table-header-group !important;
     }
     
     table.print-totals-table { 
@@ -288,7 +294,7 @@ div.stButton > button:hover {
         -webkit-print-color-adjust: exact; 
     }
     table.print-totals-table td { 
-        border: 1px solid #000000 !important; 
+        border: 1px solid #cbd5e1 !important; 
         padding: 10px !important; 
         text-align: center !important; 
         font-weight: 700 !important; 
@@ -456,36 +462,45 @@ def render_premium_html_grid(df, show_internal_profit=False):
 
 
 # ==============================================================================
-# 5. واجهة التحكم الجانبية وأقسام المنظومة
+# 5. واجهة التحكم الجانبية الفاخرة المدمجة (Sleek Apple-style Department Selector)
 # ==============================================================================
 st.sidebar.markdown(
-    "<h1 style='text-align: center; color: #d8f3dc; font-weight:800; font-size:24px; margin-bottom:20px;'>"
-    "🚢 إستبرق الدولية"
-    "</h1>", 
+    """
+    <div style="text-align: center; padding: 15px 0 25px 0; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 25px;">
+        <span style="font-size: 38px;">🚢</span>
+        <h2 style="color: #ffffff; font-weight: 900; margin: 10px 0 2px 0; font-size: 21px; letter-spacing: 0.5px;">إستبرق الدولية</h2>
+        <p style="color: #a3b899; font-size: 11.5px; font-weight: 600; margin: 0;">منظومة الرقابة المالية والعمليات اللوجستية</p>
+    </div>
+    """, 
     unsafe_allow_html=True
 )
 
-menu = st.sidebar.radio(
-    "لوحة تحكم المنظومة الموحدة:", 
+# تقسيم الأنشطة لـ 4 قطاعات أساسية لحل مشكلة الاكتظاظ
+department = st.sidebar.selectbox(
+    "🎯 حدد القطاع التشغيلي المطلوب:",
     [
-        "📊 لوحة التحكم والتقارير", 
-        "🔍 الشحنات ناقصة البيانات", 
-        "💰 إيصالات القبض والمالية", 
-        "✏️ تعديل وحذف الإيصالات", 
-        "➕ إضافة شحنة جديدة (يدوي/LCL)", 
-        "📥 رفع ملف إكسل", 
-        "👥 إدارة الزبائن", 
-        "📝 تعديل وحذف الشحنات", 
-        "🗑️ مسح البيانات دفعة واحدة"
+        "📊 الإدارة والتقرير المالي العام",
+        "🚢 حركة الحاويات والشحنات",
+        "💵 الخزينة والتحصيلات المالية",
+        "⚙️ شؤون الزبائن وصيانة النظام"
     ]
+)
+
+st.sidebar.markdown(
+    """
+    <div style="position: fixed; bottom: 15px; text-align: center; width: 230px; font-size: 11px; color: #64748b; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+        النسخة الاحترافية المعتمدة © 2026
+    </div>
+    """, 
+    unsafe_allow_html=True
 )
 
 
 # ==============================================================================
-# القسم الأول: لوحة التحكم والتقارير المالية المدمجة
+# البوابة الأولى: الإدارة والتقرير المالي العام
 # ==============================================================================
-if menu == "📊 لوحة التحكم والتقارير":
-    st.title("📊 مركز التقارير والرقابة المالية والموازنات الجارية")
+if department == "📊 الإدارة والتقرير المالي العام":
+    tab_reports, tab_audit = st.tabs(["📊 الميزان المالي العام وكشوف الحساب", "🔍 محرك فحص وتدقيق البيانات الناقصة"])
     
     conn = get_db_connection()
     try:
@@ -493,749 +508,767 @@ if menu == "📊 لوحة التحكم والتقارير":
         shipments_all = pd.read_sql_query("SELECT * FROM shipments ORDER BY id DESC", conn)
         receipts_all = pd.read_sql_query("SELECT * FROM receipts ORDER BY id DESC", conn)
     except Exception as e:
-        st.error(f"حدث خطأ أثناء جلب التقارير: {e}")
+        st.error(f"حدث خطأ أثناء الاتصال بالخادم: {e}")
     finally:
         conn.close()
-        
-    if customers_df.empty:
-        st.warning("⚠️ لا توجد أي حسابات زبائن أو شحنات مسجلة حالياً في النظام.")
-    else:
-        # حساب إحصائيات الموقف المالي العام بصورة فورية وسريعة
-        t_cont = len(shipments_all)
-        t_lyd = shipments_all['do_value_lyd'].sum() if not shipments_all.empty else 0.0
-        t_usd = shipments_all['final_freight_usd'].sum() if not shipments_all.empty else 0.0
-        
-        # عرض بطاقات الـ KPI الفاخرة
-        st.markdown(
-            f'<div class="kpi-container">'
-            f'<div class="kpi-card"><h5>📦 حجم الحاويات المعالجة</h5><h2>{t_cont} شحنة جارية</h2><p>إجمالي القيود الجمركية</p></div>'
-            f'<div class="kpi-card"><h5>💵 ذمم أوامر التسليم الكلية</h5><h2>{t_lyd:,.2f} د.ل</h2><p>قيمة الدفعات المحلية المفتوحة</p></div>'
-            f'<div class="kpi-card"><h5>💵 نولون الشحن الدولي المعتمد</h5><h2>${t_usd:,.2f}</h2><p>ذمم النقل الخارجي بالدولار</p></div>'
-            f'</div>', 
-            unsafe_allow_html=True
-        )
-        
-        # محرك التصفية الجمركي والمالي المطور
-        with st.expander("⚙️ محرك تحديد هيكلية التقارير وعمليات الفرز الذكي", expanded=True):
-            c_filter1, c_filter2, c_filter3 = st.columns(3)
-            with c_filter1: 
-                report_scope = st.radio("1. نطاق كشف الحساب:", ["كل زبائن المنظومة", "زبون محدد فردي"])
-            with c_filter2: 
-                report_structure = st.radio("2. نوع وثيقة الكشف المالية:", ["كشف مالي إجمالي عام", "كشف حساب تفصيلي"])
-            with c_filter3: 
-                display_profit = st.checkbox("إظهار قيم شحن الوكالة وصافي الأرباح (خاص بالإدارة)")
-                
-            if report_scope == "زبون محدد فردي":
-                target_customer = st.selectbox("🎯 اختر اسم حساب الزبون المستهدف بالفرز المالي:", customers_df['name'].tolist())
-            else:
-                target_customer = "الكل"
 
-        # تحضير ومعالجة البيانات بناءً على الفلاتر بطريقة الـ Vectorization السريعة
-        df_export_target = pd.DataFrame()
-        req_l, paid_l, req_u, paid_u = 0.0, 0.0, 0.0, 0.0
+    # --- علامة التبويب الأولى: التقارير المالية ---
+    with tab_reports:
+        st.title("📊 مركز التقارير والرقابة المالية والموازنات الجارية")
         
-        if report_scope == "كل زبائن المنظومة":
-            # معالجة بيانات المجموع الكلي للعملاء دفعة واحدة (ميزان مراجعة مالي مبسط)
-            if report_structure == "كشف مالي إجمالي عام":
-                st.subheader("📋 كشف ملخص أرصاد الحسابات لكافة الزبائن")
-                
-                # تجميع سريع للشحنات
-                if not shipments_all.empty:
-                    ship_grp = shipments_all.groupby('customer_name').agg(
-                        total_containers=('id', 'count'),
-                        required_lyd=('do_value_lyd', 'sum'),
-                        required_usd=('final_freight_usd', 'sum')
-                    ).reset_index()
-                else:
-                    ship_grp = pd.DataFrame(columns=['customer_name', 'total_containers', 'required_lyd', 'required_usd'])
-                
-                # تجميع سريع للمتحصلات
-                if not receipts_all.empty:
-                    rec_lyd = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD'].groupby('customer_name')['amount'].sum().reset_index(name='paid_lyd')
-                    rec_usd = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD'].groupby('customer_name')['amount'].sum().reset_index(name='paid_usd')
-                    rec_grp = pd.merge(rec_lyd, rec_usd, on='customer_name', how='outer').fillna(0.0)
-                else:
-                    rec_grp = pd.DataFrame(columns=['customer_name', 'paid_lyd', 'paid_usd'])
+        if customers_df.empty:
+            st.warning("⚠️ لا توجد حسابات مسجلة حالياً.")
+        else:
+            t_cont = len(shipments_all)
+            t_lyd = shipments_all['do_value_lyd'].sum() if not shipments_all.empty else 0.0
+            t_usd = shipments_all['final_freight_usd'].sum() if not shipments_all.empty else 0.0
+            
+            st.markdown(
+                f'<div class="kpi-container">'
+                f'<div class="kpi-card"><h5>📦 حجم الحاويات المعالجة</h5><h2>{t_cont} شحنة جارية</h2><p>إجمالي القيود الجمركية</p></div>'
+                f'<div class="kpi-card"><h5>💵 ذمم أوامر التسليم الكلية</h5><h2>{t_lyd:,.2f} د.ل</h2><p>قيمة الدفعات المحلية المفتوحة</p></div>'
+                f'<div class="kpi-card"><h5>💵 نولون الشحن الدولي المعتمد</h5><h2>${t_usd:,.2f}</h2><p>ذمم النقل الخارجي بالدولار</p></div>'
+                f'</div>', 
+                unsafe_allow_html=True
+            )
+            
+            with st.expander("⚙️ محرك تحديد هيكلية التقارير وعمليات الفرز الذكي", expanded=True):
+                c_filter1, c_filter2, c_filter3 = st.columns(3)
+                with c_filter1: 
+                    report_scope = st.radio("1. نطاق كشف الحساب:", ["كل زبائن المنظومة", "زبون محدد فردي"])
+                with c_filter2: 
+                    report_structure = st.radio("2. نوع وثيقة الكشف المالية:", ["كشف مالي إجمالي عام", "كشف حساب تفصيلي"])
+                with c_filter3: 
+                    display_profit = st.checkbox("إظهار قيم شحن الوكالة وصافي الأرباح (خاص بالإدارة)")
                     
-                # بناء ميزان الأرصدة
-                df_export_target = pd.merge(customers_df, ship_grp, left_on='name', right_on='customer_name', how='left')
-                df_export_target = pd.merge(df_export_target, rec_grp, left_on='name', right_on='customer_name', how='left')
-                df_export_target.drop(columns=['customer_name_x', 'customer_name_y', 'name'], errors='ignore', inplace=True)
-                df_export_target.rename(columns={'name': 'customer_name'}, errors='ignore', inplace=True)
-                if 'customer_name' not in df_export_target.columns:
-                    df_export_target.insert(0, 'customer_name', customers_df['name'])
+                if report_scope == "زبون محدد فردي":
+                    target_customer = st.selectbox("🎯 اختر اسم حساب الزبون المستهدف بالفرز المالي:", customers_df['name'].tolist())
+                else:
+                    target_customer = "الكل"
+
+            df_export_target = pd.DataFrame()
+            req_l, paid_l, req_u, paid_u = 0.0, 0.0, 0.0, 0.0
+            
+            if report_scope == "كل زبائن المنظومة":
+                if report_structure == "كشف مالي إجمالي عام":
+                    st.subheader("📋 كشف ملخص أرصاد الحسابات لكافة الزبائن")
                     
-                df_export_target.fillna(0.0, inplace=True)
-                df_export_target['remaining_lyd'] = df_export_target['required_lyd'] - df_export_target['paid_lyd']
-                df_export_target['remaining_usd'] = df_export_target['required_usd'] - df_export_target['paid_usd']
+                    if not shipments_all.empty:
+                        ship_grp = shipments_all.groupby('customer_name').agg(
+                            total_containers=('id', 'count'),
+                            required_lyd=('do_value_lyd', 'sum'),
+                            required_usd=('final_freight_usd', 'sum')
+                        ).reset_index()
+                    else:
+                        ship_grp = pd.DataFrame(columns=['customer_name', 'total_containers', 'required_lyd', 'required_usd'])
+                    
+                    if not receipts_all.empty:
+                        rec_lyd = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD'].groupby('customer_name')['amount'].sum().reset_index(name='paid_lyd')
+                        rec_usd = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD'].groupby('customer_name')['amount'].sum().reset_index(name='paid_usd')
+                        rec_grp = pd.merge(rec_lyd, rec_usd, on='customer_name', how='outer').fillna(0.0)
+                    else:
+                        rec_grp = pd.DataFrame(columns=['customer_name', 'paid_lyd', 'paid_usd'])
+                        
+                    df_export_target = pd.merge(customers_df, ship_grp, left_on='name', right_on='customer_name', how='left')
+                    df_export_target = pd.merge(df_export_target, rec_grp, left_on='name', right_on='customer_name', how='left')
+                    df_export_target.drop(columns=['customer_name_x', 'customer_name_y', 'name'], errors='ignore', inplace=True)
+                    df_export_target.rename(columns={'name': 'customer_name'}, errors='ignore', inplace=True)
+                    if 'customer_name' not in df_export_target.columns:
+                        df_export_target.insert(0, 'customer_name', customers_df['name'])
+                        
+                    df_export_target.fillna(0.0, inplace=True)
+                    df_export_target['remaining_lyd'] = df_export_target['required_lyd'] - df_export_target['paid_lyd']
+                    df_export_target['remaining_usd'] = df_export_target['required_usd'] - df_export_target['paid_usd']
+                    
+                    th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "الحاويات", "المطلوب (د.ل)", "المدفوع (د.ل)", "المتبقي المعلق (د.ل)", "نولون الشحن ($)", "المدفوع ($)", "المتبقي ($)"])
+                    tr_html = ""
+                    for _, r in df_export_target.iterrows():
+                        tr_html += (
+                            f"<tr>"
+                            f"<td><b>{r['customer_name']}</b></td>"
+                            f"<td>{int(r['total_containers'])}</td>"
+                            f"<td>{r['required_lyd']:,.2f} د.ل</td>"
+                            f"<td>{r['paid_lyd']:,.2f} د.ل</td>"
+                            f"<td style='color:#991b1b; font-weight:bold;'>{r['remaining_lyd']:,.2f} د.ل</td>"
+                            f"<td>${r['required_usd']:,.2f}</td>"
+                            f"<td>${r['paid_usd']:,.2f}</td>"
+                            f"<td style='color:#991b1b; font-weight:bold;'>${r['remaining_usd']:,.2f}</td>"
+                            f"</tr>"
+                        )
+                    st.markdown(f'<div class="enterprise-table-container"><table class="corporate-data-table"><thead><tr>{th_html}</tr></thead><tbody>{tr_html}</tbody></table></div>', unsafe_allow_html=True)
+                    
+                    req_l = shipments_all['do_value_lyd'].sum() if not shipments_all.empty else 0.0
+                    req_u = shipments_all['final_freight_usd'].sum() if not shipments_all.empty else 0.0
+                    paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum() if not receipts_all.empty else 0.0
+                    paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum() if not receipts_all.empty else 0.0
+                else:
+                    st.subheader("📋 كشف السجل التفصيلي الموحد لجميع الزبائن")
+                    df_export_target = shipments_all.copy()
+                    df_export_target['profit_usd'] = df_export_target['final_freight_usd'] - df_export_target['agency_freight_usd']
+                    render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
+                    
+                    req_l = df_export_target['do_value_lyd'].sum()
+                    req_u = df_export_target['final_freight_usd'].sum()
+                    paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum() if not receipts_all.empty else 0.0
+                    paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum() if not receipts_all.empty else 0.0
+            else:
+                df_cust_s = shipments_all[shipments_all['customer_name'] == target_customer].copy()
+                df_cust_r = receipts_all[receipts_all['customer_name'] == target_customer].copy()
                 
-                # عرض الجدول المالي التفاعلي
-                th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "الحاويات", "المطلوب (د.ل)", "المدفوع (د.ل)", "المتبقي المعلق (د.ل)", "نولون الشحن ($)", "المدفوع ($)", "المتبقي ($)"])
+                req_l = df_cust_s['do_value_lyd'].sum() if not df_cust_s.empty else 0.0
+                req_u = df_cust_s['final_freight_usd'].sum() if not df_cust_s.empty else 0.0
+                paid_l = df_cust_r[df_cust_r['currency'] == 'دينار ليبي LYD']['amount'].sum() if not df_cust_r.empty else 0.0
+                paid_u = df_cust_r[df_cust_r['currency'] == 'دولار أمريكي USD']['amount'].sum() if not df_cust_r.empty else 0.0
+                
+                if report_structure == "كشف مالي إجمالي عام":
+                    st.subheader(f"📋 ملخص الموقف الحسابي العام لحساب: {target_customer}")
+                    df_export_target = df_cust_s.copy()
+                    render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
+                else:
+                    st.subheader(f"📋 كشف الحاويات والقيود التفصيلي المعتمد لحساب: {target_customer}")
+                    df_cust_s['profit_usd'] = df_cust_s['final_freight_usd'] - df_cust_s['agency_freight_usd']
+                    df_export_target = df_cust_s.copy()
+                    render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
+
+            if not df_export_target.empty:
+                st.write("")
+                st.download_button(
+                    label="📥 تحميل كشف الحساب النشط حالياً بصيغة Excel معتمد للشركة", 
+                    data=to_excel(df_export_target), 
+                    file_name=f"istabraq_statement_{target_customer.replace(' ', '_')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+
+            # --- وثيقة تصديق الطباعة المعزولة ---
+            st.write("---")
+            st.markdown("### 🖨️ وثيقة تصديق ومطابقة كشوفات الحساب الرسمية للطباعة:")
+            if st.button("🖨️ تأكيد معالجة وتوليد وثيقة كشف الحساب للطباعة الفورية"):
+                rows_html_p = ""
+                if report_structure == "كشف مالي إجمالي عام" and report_scope == "كل زبائن المنظومة":
+                    table_headers = "<th>اسم الزبون</th><th>عدد الحاويات</th><th>المطلوب (د.ل)</th><th>المدفوع (د.ل)</th><th>المتبقي الجاري (د.ل)</th><th>الشحن ($)</th><th>المدفوع ($)</th><th>المتبقي الجاري ($)</th>"
+                    doc_type_text = "كشف الميزان والأرصاد المالي الإجمالي المجمع لكافة حسابات العملاء"
+                    for _, r in df_export_target.iterrows():
+                        rows_html_p += (
+                            f"<tr><td>{r['customer_name']}</td><td>{int(r['total_containers'])}</td>"
+                            f"<td>{r['required_lyd']:,.2f} د.ل</td><td>{r['paid_lyd']:,.2f} د.ل</td><td><b>{r['remaining_lyd']:,.2f} د.ل</b></td>"
+                            f"<td>${r['required_usd']:,.2f}</td><td>${r['paid_usd']:,.2f}</td><td><b>${r['remaining_usd']:,.2f}</b></td></tr>"
+                        )
+                else:
+                    th_agency_print = "<th>شحن الوكالة</th>" if display_profit else ""
+                    th_profit_print = "<th>صافي الربح</th>" if display_profit else ""
+                    table_headers = f"<th>اسم الزبون</th><th>رقم البوليصة</th><th>رقم الحاوية</th><th>تاريخ الاستلام</th><th>رقم D.O</th><th>قيمة أمر التسليم</th><th>الشحن النهائي</th>{th_agency_print}{th_profit_print}"
+                    doc_type_text = f"كشف الحاويات التفصيلي المعتمد والمصفى جمركياً"
+                    for _, r in df_export_target.iterrows():
+                        agency_td_p = f"<td>${r['agency_freight_usd']:,.2f}</td>" if display_profit else ""
+                        profit_val = r['final_freight_usd'] - r['agency_freight_usd']
+                        profit_td_p = f"<td>${profit_val:,.2f}</td>" if display_profit else ""
+                        rows_html_p += (
+                            f"<tr><td>{r['customer_name']}</td><td>{r['bl_number']}</td><td>{r['container_number']}</td>"
+                            f"<td>{r['shipment_date']}</td><td>{r['do_number']}</td><td>{safe_float(r['do_value_lyd']):,.2f} د.ل</td>"
+                            f"<td>${r['final_freight_usd']:,.2f}</td>{agency_td_p}{profit_td_p}</tr>"
+                        )
+
+                summary_table_html = f"""
+                <table class="print-totals-table">
+                    <thead>
+                        <tr>
+                            <th>العملة والبيان الحسابي للتحصيل الرسمي والذمة الجارية</th>
+                            <th>إجمالي القيمة المطلوبة بذمته</th>
+                            <th>إجمالي القيمة المدفوعة والمستلمة بالخزينة</th>
+                            <th>صافي الرصيد المتبقي (الجاري معلق)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>حساب أوامر التسليم والتخليص الجمركي (LYD)</b></td>
+                            <td>{req_l:,.2f} د.ل</td>
+                            <td style="color:#112a1f;">{paid_l:,.2f} د.ل</td>
+                            <td style="color:#991b1b; font-weight:bold;">{req_l - paid_l:,.2f} د.ل</td>
+                        </tr>
+                        <tr>
+                            <td><b>حساب نولون وأرصاد الشحن الدولي (USD)</b></td>
+                            <td>${req_u:,.2f}</td>
+                            <td style="color:#112a1f;">${paid_u:,.2f}</td>
+                            <td style="color:#991b1b; font-weight:bold;">${req_u - paid_u:,.2f}</td>
+                        </tr>
+                    </tbody>
+                </table>"""
+
+                html_document_payload = f"""
+                <div class='official-print-document'>
+                    <div class='document-corporate-header'>
+                        <h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1>
+                        <p>المكتب الرئيسي: مصراتة - ليبيا | الحسابات المركزية المعتمدة والتسويات المالية</p>
+                    </div>
+                    <table class='document-meta-table'>
+                        <tr>
+                            <td><b>كشف حساب جاري للعميل:</b> {target_customer if report_scope == 'زبون محدد فردي' else 'كافة عملاء المنظومة'}</td>
+                            <td style='text-align: left;'><b>تاريخ استخراج الوثيقة:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</td>
+                        </tr>
+                        <tr>
+                            <td><b>نوع وثيقة كشف الموقف المالي:</b> {doc_type_text}</td>
+                            <td style='text-align: left;'><b>حصر القيود المدرجة:</b> {len(df_export_target)} سجل جاري فعال</td>
+                        </tr>
+                    </table>
+                    <table class='print-invoice-table'>
+                        <thead><tr>{table_headers}</tr></thead>
+                        <tbody>{rows_html_p}</tbody>
+                    </table>
+                    {summary_table_html}
+                    <div class='print-signatures-block'>
+                        <div>توقيع واعتماد الحسابات المركزية: .........................</div>
+                        <div>خِتم وتصديق إدارة الشركة رسميًا: .........................</div>
+                    </div>
+                </div>"""
+                
+                st.markdown(html_document_payload, unsafe_allow_html=True)
+                st.success("🎉 تكللت العملية بالنجاح! يمكنك الآن الضغط على مفاتيح الكيبورد [ Ctrl + P ] لبدء الطباعة المعزولة والآمنة فوراً.")
+
+    # --- علامة التبويب الثانية: تدقيق البيانات الناقصة ---
+    with tab_audit:
+        st.title("🔍 محرك حصر ومتابعة الشحنات ناقصة البيانات (Data Auditor)")
+        st.markdown("يقوم هذا المحرك بفرز الحاويات التي تفتقر لأرقام أو قيم مالية أو بيانات تسليم لتسهيل معالجتها ومراجعتها.")
+        
+        if shipments_all.empty:
+            st.success("🎉 قاعدة البيانات خالية تماماً من الشحنات حالياً.")
+        else:
+            with st.expander("⚙️ محدد شروط تدقيق وفحص البيانات الناقصة", expanded=True):
+                fc1, fc2 = st.columns([1, 2])
+                with fc1:
+                    selected_cust_filter = st.selectbox("تصفية لزبون محدد:", ["كل زبائن المنظومة"] + customers_df['name'].tolist())
+                with fc2:
+                    incomplete_criteria = st.multiselect(
+                        "اختر النواقص التي ترغب في حصرها:",
+                        [
+                            "رقم الحاوية مفقود / فارغ",
+                            "رقم البوليصة مفقود / فارغ",
+                            "تاريخ الاستلام غير حدد",
+                            "رقم إذن التسليم (D.O) مفقود / فارغ",
+                            "قيمة أمر التسليم غير مدخلة (صفر)",
+                            "شحن الوكالة غير مسعر ($0)",
+                            "الشحن النهائي للزبون غير مسعر ($0)"
+                        ],
+                        default=[
+                            "رقم الحاوية مفقود / فارغ",
+                            "رقم البوليصة مفقود / فارغ",
+                            "قيمة أمر التسليم غير مدخلة (صفر)",
+                            "الشحن النهائي للزبون غير مسعر ($0)"
+                        ]
+                    )
+            
+            df_audit = shipments_all.copy()
+            if selected_cust_filter != "كل زبائن المنظومة":
+                df_audit = df_audit[df_audit['customer_name'] == selected_cust_filter]
+                
+            masks = []
+            if incomplete_criteria:
+                if "رقم الحاوية مفقود / فارغ" in incomplete_criteria:
+                    masks.append(df_audit['container_number'].isna() | (df_audit['container_number'].astype(str).str.strip() == ""))
+                if "رقم البوليصة مفقود / فارغ" in incomplete_criteria:
+                    masks.append(df_audit['bl_number'].isna() | (df_audit['bl_number'].astype(str).str.strip() == ""))
+                if "تاريخ الاستلام غير حدد" in incomplete_criteria:
+                    masks.append(df_audit['shipment_date'].isna() | (df_audit['shipment_date'].astype(str).str.strip() == ""))
+                if "رقم إذن التسليم (D.O) مفقود / فارغ" in incomplete_criteria:
+                    masks.append(df_audit['do_number'].isna() | (df_audit['do_number'].astype(str).str.strip() == ""))
+                if "قيمة أمر التسليم غير مدخلة (صفر)" in incomplete_criteria:
+                    masks.append(df_audit['do_value_lyd'].isna() | (df_audit['do_value_lyd'] <= 0.0))
+                if "شحن الوكالة غير مسعر ($0)" in incomplete_criteria:
+                    masks.append(df_audit['agency_freight_usd'].isna() | (df_audit['agency_freight_usd'] <= 0.0))
+                if "الشحن النهائي للزبون غير مسعر ($0)" in incomplete_criteria:
+                    masks.append(df_audit['final_freight_usd'].isna() | (df_audit['final_freight_usd'] <= 0.0))
+                    
+                if masks:
+                    combined_mask = masks[0]
+                    for m in masks[1:]:
+                        combined_mask = combined_mask | m
+                    df_audit = df_audit[combined_mask]
+            
+            if df_audit.empty:
+                st.success("🎉 ممتاز! لا توجد أي شحنات ناقصة البيانات بناءً على شروط الفحص المحددة.")
+            else:
+                st.warning(f"⚠️ تم رصد {len(df_audit)} شحنة / حاوية بها بيانات مفقودة:")
+                
+                th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "رقم البوليصة", "رقم الحاوية", "التاريخ", "رقم D.O", "قيمة إذن التسليم", "شحن الوكالة", "الشحن النهائي"])
                 tr_html = ""
-                for _, r in df_export_target.iterrows():
+                for _, row in df_audit.iterrows():
+                    cust = row['customer_name']
+                    bl = row['bl_number'] if (row['bl_number'] and str(row['bl_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
+                    cont = row['container_number'] if (row['container_number'] and str(row['container_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
+                    sdate = row['shipment_date'] if (row['shipment_date'] and str(row['shipment_date']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
+                    donum = row['do_number'] if (row['do_number'] and str(row['do_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
+                    
+                    doval = f"{row['do_value_lyd']:,.2f} د.ل" if row['do_value_lyd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ 0.0 د.ل</span>"
+                    agency = f"${row['agency_freight_usd']:,.2f}" if row['agency_freight_usd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ $0.0</span>"
+                    final = f"${row['final_freight_usd']:,.2f}" if row['final_freight_usd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ $0.0</span>"
+                    
                     tr_html += (
                         f"<tr>"
-                        f"<td><b>{r['customer_name']}</b></td>"
-                        f"<td>{int(r['total_containers'])}</td>"
-                        f"<td>{r['required_lyd']:,.2f} د.ل</td>"
-                        f"<td>{r['paid_lyd']:,.2f} د.ل</td>"
-                        f"<td style='color:#991b1b; font-weight:bold;'>{r['remaining_lyd']:,.2f} د.ل</td>"
-                        f"<td>${r['required_usd']:,.2f}</td>"
-                        f"<td>${r['paid_usd']:,.2f}</td>"
-                        f"<td style='color:#991b1b; font-weight:bold;'>${r['remaining_usd']:,.2f}</td>"
+                        f"<td><b>{cust}</b></td>"
+                        f"<td>{bl}</td>"
+                        f"<td>{cont}</td>"
+                        f"<td>{sdate}</td>"
+                        f"<td>{donum}</td>"
+                        f"<td>{doval}</td>"
+                        f"<td>{agency}</td>"
+                        f"<td>{final}</td>"
                         f"</tr>"
                     )
                 st.markdown(f'<div class="enterprise-table-container"><table class="corporate-data-table"><thead><tr>{th_html}</tr></thead><tbody>{tr_html}</tbody></table></div>', unsafe_allow_html=True)
                 
-                req_l = shipments_all['do_value_lyd'].sum() if not shipments_all.empty else 0.0
-                req_u = shipments_all['final_freight_usd'].sum() if not shipments_all.empty else 0.0
-                paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum() if not receipts_all.empty else 0.0
-                paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum() if not receipts_all.empty else 0.0
+                # الاستكمال السريع للحاويات
+                st.write("---")
+                st.subheader("📝 الاستكمال والتعديل السريع للحاوية المحددة:")
+                df_audit['selector_label'] = df_audit['customer_name'] + " | بوليصة: " + df_audit['bl_number'].astype(str) + " | حاوية: " + df_audit['container_number'].astype(str)
+                selected_audit_opt = st.selectbox("اختر الشحنة المستهدفة بالاستكمال والترقيد المالي:", df_audit['selector_label'].tolist())
+                selected_audit_row = df_audit[df_audit['selector_label'] == selected_audit_opt].iloc[0]
+                audit_id = int(selected_audit_row['id'])
                 
-            else:
-                # كشف حساب تفصيلي للكل
-                st.subheader("📋 كشف السجل التفصيلي الموحد لجميع الزبائن")
-                df_export_target = shipments_all.copy()
-                df_export_target['profit_usd'] = df_export_target['final_freight_usd'] - df_export_target['agency_freight_usd']
-                render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
-                
-                req_l = df_export_target['do_value_lyd'].sum()
-                req_u = df_export_target['final_freight_usd'].sum()
-                paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum() if not receipts_all.empty else 0.0
-                paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum() if not receipts_all.empty else 0.0
-                
-        else:
-            # معالجة بيانات زبون محدد بشكل آمن وفوري
-            df_cust_s = shipments_all[shipments_all['customer_name'] == target_customer].copy()
-            df_cust_r = receipts_all[receipts_all['customer_name'] == target_customer].copy()
-            
-            req_l = df_cust_s['do_value_lyd'].sum() if not df_cust_s.empty else 0.0
-            req_u = df_cust_s['final_freight_usd'].sum() if not df_cust_s.empty else 0.0
-            paid_l = df_cust_r[df_cust_r['currency'] == 'دينار ليبي LYD']['amount'].sum() if not df_cust_r.empty else 0.0
-            paid_u = df_cust_r[df_cust_r['currency'] == 'دولار أمريكي USD']['amount'].sum() if not df_cust_r.empty else 0.0
-            
-            if report_structure == "كشف مالي إجمالي عام":
-                st.subheader(f"📋 ملخص الموقف الحسابي العام لحساب: {target_customer}")
-                # عرض إجمالي مجمع للزبون المختار
-                df_export_target = df_cust_s.copy()
-                render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
-            else:
-                st.subheader(f"📋 كشف الحاويات والقيود التفصيلي المعتمد لحساب: {target_customer}")
-                df_cust_s['profit_usd'] = df_cust_s['final_freight_usd'] - df_cust_s['agency_freight_usd']
-                df_export_target = df_cust_s.copy()
-                render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
-
-        # زر تحميل كشف الحساب الحالي بصيغة إكسل
-        if not df_export_target.empty:
-            st.write("")
-            st.download_button(
-                label="📥 تحميل كشف الحساب النشط حالياً بصيغة Excel معتمد للشركة", 
-                data=to_excel(df_export_target), 
-                file_name=f"istabraq_statement_{target_customer.replace(' ', '_')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-
-        # ==============================================================================
-        # محرك الطباعة الجمركية المعتمد والمعزول (A4 Portrait Layout)
-        # ==============================================================================
-        st.write("---")
-        st.markdown("### 🖨️ وثيقة تصديق ومطابقة كشوفات الحساب الرسمية الجاهزة للطباعة:")
-        
-        if st.button("🖨️ تأكيد معالجة وتوليد وثيقة كشف الحساب للطباعة الفورية"):
-            rows_html_p = ""
-            
-            if report_structure == "كشف مالي إجمالي عام" and report_scope == "كل زبائن المنظومة":
-                table_headers = "<th>اسم الزبون</th><th>عدد الحاويات</th><th>المطلوب (د.ل)</th><th>المدفوع (د.ل)</th><th>المتبقي الجاري (د.ل)</th><th>الشحن ($)</th><th>المدفوع ($)</th><th>المتبقي الجاري ($)</th>"
-                doc_type_text = "كشف الميزان والأرصاد المالي الإجمالي المجمع لكافة حسابات العملاء"
-                for _, r in df_export_target.iterrows():
-                    rows_html_p += (
-                        f"<tr><td>{r['customer_name']}</td><td>{int(r['total_containers'])}</td>"
-                        f"<td>{r['required_lyd']:,.2f} د.ل</td><td>{r['paid_lyd']:,.2f} د.ل</td><td><b>{r['remaining_lyd']:,.2f} د.ل</b></td>"
-                        f"<td>${r['required_usd']:,.2f}</td><td>${r['paid_usd']:,.2f}</td><td><b>${r['remaining_usd']:,.2f}</b></td></tr>"
-                    )
-            else:
-                th_agency_print = "<th>شحن الوكالة</th>" if display_profit else ""
-                th_profit_print = "<th>صافي الربح</th>" if display_profit else ""
-                table_headers = f"<th>اسم الزبون</th><th>رقم البوليصة</th><th>رقم الحاوية</th><th>تاريخ الاستلام</th><th>رقم D.O</th><th>قيمة أمر التسليم</th><th>الشحن النهائي</th>{th_agency_print}{th_profit_print}"
-                doc_type_text = f"كشف الحاويات التفصيلي المعتمد والمصفى جمركياً"
-                
-                for _, r in df_export_target.iterrows():
-                    agency_td_p = f"<td>${r['agency_freight_usd']:,.2f}</td>" if display_profit else ""
-                    profit_val = r['final_freight_usd'] - r['agency_freight_usd']
-                    profit_td_p = f"<td>${profit_val:,.2f}</td>" if display_profit else ""
-                    rows_html_p += (
-                        f"<tr><td>{r['customer_name']}</td><td>{r['bl_number']}</td><td>{r['container_number']}</td>"
-                        f"<td>{r['shipment_date']}</td><td>{r['do_number']}</td><td>{safe_float(r['do_value_lyd']):,.2f} د.ل</td>"
-                        f"<td>${r['final_freight_usd']:,.2f}</td>{agency_td_p}{profit_td_p}</tr>"
-                    )
-
-            summary_table_html = f"""
-            <table class="print-totals-table">
-                <thead>
-                    <tr>
-                        <th>العملة والبيان الحسابي للتحصيل الرسمي والذمة الجارية</th>
-                        <th>إجمالي القيمة المطلوبة بذمته</th>
-                        <th>إجمالي القيمة المدفوعة والمستلمة بالخزينة</th>
-                        <th>صافي الرصيد المتبقي (الجاري معلق)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><b>حساب أوامر التسليم والتخليص الجمركي (LYD)</b></td>
-                        <td>{req_l:,.2f} د.ل</td>
-                        <td style="color:#1b4332;">{paid_l:,.2f} د.ل</td>
-                        <td style="color:#991b1b; font-weight:bold;">{req_l - paid_l:,.2f} د.ل</td>
-                    </tr>
-                    <tr>
-                        <td><b>حساب نولون وأرصاد الشحن الدولي (USD)</b></td>
-                        <td>${req_u:,.2f}</td>
-                        <td style="color:#1b4332;">${paid_u:,.2f}</td>
-                        <td style="color:#991b1b; font-weight:bold;">${req_u - paid_u:,.2f}</td>
-                    </tr>
-                </tbody>
-            </table>"""
-
-            # حجر الأساس لبناء الطباعة المعزولة تماماً بدون تداخل
-            html_document_payload = f"""
-            <div class='official-print-document'>
-                <div class='document-corporate-header'>
-                    <h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1>
-                    <p>المكتب الرئيسي: مصراتة - ليبيا | الحسابات المركزية المعتمدة والتسويات المالية</p>
-                </div>
-                <table class='document-meta-table'>
-                    <tr>
-                        <td><b>كشف حساب جاري للعميل:</b> {target_customer if report_scope == 'زبون محدد فردي' else 'كافة عملاء المنظومة'}</td>
-                        <td style='text-align: left;'><b>تاريخ استخراج الوثيقة:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</td>
-                    </tr>
-                    <tr>
-                        <td><b>نوع وثيقة كشف الموقف المالي:</b> {doc_type_text}</td>
-                        <td style='text-align: left;'><b>حصر القيود المدرجة:</b> {len(df_export_target)} سجل جاري فعال</td>
-                    </tr>
-                </table>
-                <table class='print-invoice-table'>
-                    <thead><tr>{table_headers}</tr></thead>
-                    <tbody>{rows_html_p}</tbody>
-                </table>
-                {summary_table_html}
-                <div class='print-signatures-block'>
-                    <div>توقيع واعتماد الحسابات المركزية: .........................</div>
-                    <div>خِتم وتصديق إدارة الشركة رسميًا: .........................</div>
-                </div>
-            </div>"""
-            
-            st.markdown(html_document_payload, unsafe_allow_html=True)
-            st.success("🎉 تكللت العملية بالنجاح! يمكنك الآن الضغط على مفاتيح الكيبورد [ Ctrl + P ] لبدء الطباعة المعزولة والآمنة فوراً.")
-
-
-# ==============================================================================
-# القسم الثاني: محرك حصر ومتابعة الشحنات ناقصة البيانات (البديل المطور لأعمار الديون)
-# ==============================================================================
-elif menu == "🔍 الشحنات ناقصة البيانات":
-    st.title("🔍 محرك حصر ومتابعة الشحنات ناقصة البيانات (Data Auditor)")
-    st.markdown("يساعدك هذا القسم في فلترة وتحديد كافة بوالص الحاويات التي تفتقر لمعلومات أساسية مثل (التواريخ، أرقام البوالص، قيم الشحن، أرقام الحاويات) لتسهيل استكمالها.")
-    
-    conn = get_db_connection()
-    try:
-        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
-        shipments_all = pd.read_sql_query("SELECT * FROM shipments ORDER BY id DESC", conn)
-    except Exception as e:
-        st.error(f"خطأ في جلب البيانات: {e}")
-    finally:
-        conn.close()
-        
-    if shipments_all.empty:
-        st.success("🎉 قاعدة البيانات خالية تماماً من الشحنات حالياً.")
-    else:
-        # لوحة الفرز والتدقيق الذكي
-        with st.expander("⚙️ محدد شروط تدقيق وفحص البيانات الناقصة", expanded=True):
-            fc1, fc2 = st.columns([1, 2])
-            with fc1:
-                selected_cust_filter = st.selectbox("تصفية لزبون محدد:", ["كل زبائن المنظومة"] + customers_df['name'].tolist())
-            with fc2:
-                incomplete_criteria = st.multiselect(
-                    "اختر النواقص التي ترغب في حصرها:",
-                    [
-                        "رقم الحاوية مفقود / فارغ",
-                        "رقم البوليصة مفقود / فارغ",
-                        "تاريخ الاستلام غير محدد",
-                        "رقم إذن التسليم (D.O) مفقود / فارغ",
-                        "قيمة أمر التسليم غير مدخلة (صفر)",
-                        "شحن الوكالة غير مسعر ($0)",
-                        "الشحن النهائي للزبون غير مسعر ($0)"
-                    ],
-                    default=[
-                        "رقم الحاوية مفقود / فارغ",
-                        "رقم البوليصة مفقود / فارغ",
-                        "قيمة أمر التسليم غير مدخلة (صفر)",
-                        "الشحن النهائي للزبون غير مسعر ($0)"
-                    ]
-                )
-        
-        # فلترة البيانات بناء على العميل أولاً
-        df_audit = shipments_all.copy()
-        if selected_cust_filter != "كل زبائن المنظومة":
-            df_audit = df_audit[df_audit['customer_name'] == selected_cust_filter]
-            
-        # تطبيق مرشحات النواقص المختارة
-        masks = []
-        if incomplete_criteria:
-            if "رقم الحاوية مفقود / فارغ" in incomplete_criteria:
-                masks.append(df_audit['container_number'].isna() | (df_audit['container_number'].astype(str).str.strip() == ""))
-            if "رقم البوليصة مفقود / فارغ" in incomplete_criteria:
-                masks.append(df_audit['bl_number'].isna() | (df_audit['bl_number'].astype(str).str.strip() == ""))
-            if "تاريخ الاستلام غير محدد" in incomplete_criteria:
-                masks.append(df_audit['shipment_date'].isna() | (df_audit['shipment_date'].astype(str).str.strip() == ""))
-            if "رقم إذن التسليم (D.O) مفقود / فارغ" in incomplete_criteria:
-                masks.append(df_audit['do_number'].isna() | (df_audit['do_number'].astype(str).str.strip() == ""))
-            if "قيمة أمر التسليم غير مدخلة (صفر)" in incomplete_criteria:
-                masks.append(df_audit['do_value_lyd'].isna() | (df_audit['do_value_lyd'] <= 0.0))
-            if "شحن الوكالة غير مسعر ($0)" in incomplete_criteria:
-                masks.append(df_audit['agency_freight_usd'].isna() | (df_audit['agency_freight_usd'] <= 0.0))
-            if "الشحن النهائي للزبون غير مسعر ($0)" in incomplete_criteria:
-                masks.append(df_audit['final_freight_usd'].isna() | (df_audit['final_freight_usd'] <= 0.0))
-                
-            # دمج المرشحات باستخدام المعامل المنطقي OR لتظهر أي حاوية بها نقص واحد على الأقل
-            if masks:
-                combined_mask = masks[0]
-                for m in masks[1:]:
-                    combined_mask = combined_mask | m
-                df_audit = df_audit[combined_mask]
-        
-        if df_audit.empty:
-            st.success("🎉 ممتاز! لا توجد أي شحنات ناقصة البيانات بناءً على شروط الفحص المحددة.")
-        else:
-            st.warning(f"⚠️ تم رصد {len(df_audit)} شحنة / حاوية ببيانات ناقصة وغير مكتملة:")
-            
-            # عرض الجدول الملون مع إبراز الأخطاء
-            th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "رقم البوليصة", "رقم الحاوية", "التاريخ", "رقم D.O", "قيمة إذن التسليم", "شحن الوكالة", "الشحن النهائي"])
-            tr_html = ""
-            for _, row in df_audit.iterrows():
-                # تلوين النواقص باللون الأحمر لتنبيه المدخل
-                cust = row['customer_name']
-                bl = row['bl_number'] if (row['bl_number'] and str(row['bl_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
-                cont = row['container_number'] if (row['container_number'] and str(row['container_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
-                sdate = row['shipment_date'] if (row['shipment_date'] and str(row['shipment_date']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
-                donum = row['do_number'] if (row['do_number'] and str(row['do_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
-                
-                doval = f"{row['do_value_lyd']:,.2f} د.ل" if row['do_value_lyd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ 0.0 د.ل</span>"
-                agency = f"${row['agency_freight_usd']:,.2f}" if row['agency_freight_usd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ $0.0</span>"
-                final = f"${row['final_freight_usd']:,.2f}" if row['final_freight_usd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ $0.0</span>"
-                
-                tr_html += (
-                    f"<tr>"
-                    f"<td><b>{cust}</b></td>"
-                    f"<td>{bl}</td>"
-                    f"<td>{cont}</td>"
-                    f"<td>{sdate}</td>"
-                    f"<td>{donum}</td>"
-                    f"<td>{doval}</td>"
-                    f"<td>{agency}</td>"
-                    f"<td>{final}</td>"
-                    f"</tr>"
-                )
-                
-            st.markdown(
-                f'<div class="enterprise-table-container">'
-                f'<table class="corporate-data-table">'
-                f'<thead><tr>{th_html}</tr></thead>'
-                f'<tbody>{tr_html}</tbody>'
-                f'</table></div>', 
-                unsafe_allow_html=True
-            )
-            
-            # ==============================================================================
-            # محرك تعديل سريع ومباشر للحاويات ناقصة البيانات
-            # ==============================================================================
-            st.write("---")
-            st.subheader("📝 الاستكمال والتعديل السريع للحاوية المحددة:")
-            st.info("تسمح لك هذه اللوحة باختيار الشحنة الناقصة مباشرة من الجدول وتحديث معلوماتها فوراً دون تشتيت.")
-            
-            df_audit['selector_label'] = (
-                df_audit['customer_name'] + 
-                " | بوليصة: " + df_audit['bl_number'].astype(str) + 
-                " | حاوية: " + df_audit['container_number'].astype(str)
-            )
-            
-            selected_audit_opt = st.selectbox("اختر الشحنة المستهدفة بالاستكمال والترقيد المالي:", df_audit['selector_label'].tolist())
-            selected_audit_row = df_audit[df_audit['selector_label'] == selected_audit_opt].iloc[0]
-            audit_id = int(selected_audit_row['id'])
-            
-            with st.form("quick_audit_update_form"):
-                ac1, ac2, ac3 = st.columns(3)
-                with ac1:
-                    audit_cust_name = st.text_input("اسم حساب العميل (مغلق ومحمي):", value=selected_audit_row['customer_name'], disabled=True)
-                with ac2:
-                    audit_container_num = st.text_input("رقم الحاوية / الحاويات:", value=selected_audit_row['container_number'])
-                with ac3:
-                    audit_bl_num = st.text_input("رقم البوليصة الرئيسي:", value=selected_audit_row['bl_number'])
-                    
-                ac4, ac5, ac6 = st.columns(3)
-                with ac4:
-                    audit_date_val = st.text_input("تاريخ الدخول والتقييد (YYYY-MM-DD):", value=selected_audit_row['shipment_date'])
-                with ac5:
-                    audit_do_num_val = st.text_input("رقم إذن / أمر التسليم (D.O):", value=selected_audit_row['do_number'])
-                with ac6:
-                    audit_do_value_val = st.number_input("قيمة أمر التسليم الفعالة (بالدينار LYD):", value=float(selected_audit_row['do_value_lyd']))
-                    
-                ac7, ac8 = st.columns(2)
-                with ac7:
-                    audit_agency_val = st.number_input("تكلفة شحن الوكالة الكلية (بالدولار USD):", value=float(selected_audit_row['agency_freight_usd']))
-                with ac8:
-                    audit_final_val = st.number_input("سعر الشحن النهائي المقيد على العميل (بالدولار USD):", value=float(selected_audit_row['final_freight_usd']))
-                    
-                if st.form_submit_button("🚀 حفظ وتأكيد استكمال البيانات ومزامنتها"):
-                    conn = get_db_connection()
-                    try:
-                        with conn.cursor() as cursor:
-                            cursor.execute(
-                                'UPDATE shipments SET container_number=%s, bl_number=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s',
-                                (
-                                    audit_container_num.strip().upper(),
-                                    audit_bl_num.strip().upper(),
-                                    parse_any_date(audit_date_val),
-                                    audit_do_num_val.strip(),
-                                    audit_do_value_val,
-                                    audit_agency_val,
-                                    audit_final_val,
-                                    audit_id
-                                )
-                            )
-                            conn.commit()
-                        st.success("🎉 تم استكمال وتحديث بيانات الشحنة بنجاح في النظام السحابي!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ خطأ أثناء الحفظ الفوري للبيانات: {e}")
-                    finally:
-                        conn.close()
-
-
-# ==============================================================================
-# القسم الثالث: إدارة المدفوعات وإيصالات القبض والمالية
-# ==============================================================================
-elif menu == "💰 إيصالات القبض والمالية":
-    st.title("💰 إدارة المدفوعات وإيصالات تحصيل وإيداع الخزينة")
-    
-    conn = get_db_connection()
-    try:
-        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
-    except Exception as e:
-        st.error(f"خطأ في الاتصال: {e}")
-    finally:
-        conn.close()
-        
-    if customers_df.empty:
-        st.warning("⚠️ يرجى إضافة حساب زبون مسجل واحد على الأقل عبر قسم (إدارة الزبائن) لتتمكن من إدراج المبالغ المالية.")
-    else:
-        st.subheader("➕ تحرير وتسجيل إيصال سداد مالي جديد")
-        with st.form("receipt_form", clear_on_submit=True):
-            rc1, rc2, rc3 = st.columns(3)
-            with rc1: 
-                r_cust = st.selectbox("قبض من الزبون المسجل:", customers_df['name'])
-            with rc2: 
-                r_amount = st.number_input("قيمة المبلغ المقبوض بالكامل:", min_value=0.0, step=100.0, format="%.2f")
-            with rc3: 
-                r_curr = st.selectbox("تحديد العملة المحصلة:", ["دينار ليبي LYD", "دولار أمريكي USD"])
-                
-            rc4, rc5 = st.columns([1, 2])
-            with rc4: 
-                r_date = st.date_input("تاريخ القبض والتقييد المالي:", datetime.now())
-            with rc5: 
-                r_notes = st.text_input("رقم الإيصال اليدوي أو ملاحظات السند والبيان:")
-                
-            if st.form_submit_button("💾 حفظ وإيداع الإيصال بقاعدة البيانات"):
-                if r_amount <= 0:
-                    st.error("❌ خطأ: لا يمكن تقييد إيصال مالي بقيمة صفر أو قيمة سالبة.")
-                else:
-                    conn = get_db_connection()
-                    try:
-                        with conn.cursor() as cursor:
-                            cursor.execute(
-                                'INSERT INTO receipts (customer_name, amount, currency, receipt_date, notes) VALUES (%s, %s, %s, %s, %s)', 
-                                (r_cust, r_amount, r_curr, r_date.strftime('%Y-%m-%d'), r_notes.strip())
-                            )
-                            conn.commit()
-                        st.success(f"🎉 تم تسجيل وإيداع مبلغ {r_amount:,.2f} ({r_curr}) بحساب الزبون [{r_cust}] بنجاح!")
-                    except Exception as e:
-                        st.error(f"حدث خطأ أثناء حفظ الإيصال: {e}")
-                    finally:
-                        conn.close()
-
-
-# ==============================================================================
-# القسم الرابع: تعديل وحذف إيصالات القبض الجارية
-# ==============================================================================
-elif menu == "✏️ تعديل وحذف الإيصالات":
-    st.title("✏️ التحكم وإدارة إيصالات القبض والتحصيلات المالية (تعديل / حذف)")
-    
-    conn = get_db_connection()
-    try:
-        receipts_all = pd.read_sql_query("SELECT * FROM receipts ORDER BY id DESC", conn)
-    except Exception as e:
-        st.error(f"خطأ: {e}")
-    finally:
-        conn.close()
-        
-    if receipts_all.empty:
-        st.info("ℹ️ الخزينة خالية تماماً ولا توجد إيصالات مسجلة حالياً.")
-    else:
-        search_receipt = st.text_input("🔍 ابحث في الإيصالات (عبر اسم الزبون أو ملاحظات السند):")
-        filtered_r = receipts_all.copy()
-        
-        if search_receipt.strip():
-            sr = search_receipt.strip().lower()
-            filtered_r = receipts_all[
-                receipts_all['customer_name'].str.lower().str.contains(sr, na=False) | 
-                receipts_all['notes'].str.lower().str.contains(sr, na=False)
-            ]
-            
-        if filtered_r.empty:
-            st.warning("⚠️ لم يتم العثور على أي نتائج تطابق عملية البحث.")
-        else:
-            filtered_r['selector_text'] = (
-                filtered_r['customer_name'] + 
-                " | قيمة المبلغ: " + filtered_r['amount'].astype(str) + 
-                " (" + filtered_r['currency'] + ") | التاريخ: " + 
-                filtered_r['receipt_date'] + " | البيان: " + filtered_r['notes']
-            )
-            
-            selected_receipt_opt = st.selectbox("اختر الإيصال المستهدف للتعديل أو الإزالة السحابية:", filtered_r['selector_text'])
-            selected_r_row = filtered_r[filtered_r['selector_text'] == selected_receipt_opt].iloc[0]
-            receipt_id = int(selected_r_row['id'])
-            
-            with st.form("edit_r_form"):
-                rec_c1, rec_c2, rec_c3 = st.columns(3)
-                with rec_c1: 
-                    edit_r_cust = st.text_input("اسم حساب الزبون (غير قابل للتغيير من هنا)", value=selected_r_row['customer_name'], disabled=True)
-                with rec_c2: 
-                    edit_r_amount = st.number_input("تعديل قيمة المبلغ المالي:", value=float(selected_r_row['amount']))
-                with rec_c3: 
-                    edit_r_curr = st.selectbox("تعديل العملة المودعة:", ["دينار ليبي LYD", "دولار أمريكي USD"], index=0 if "LYD" in selected_r_row['currency'] else 1)
-                    
-                rec_c4, rec_c5 = st.columns(2)
-                with rec_c4: 
-                    edit_r_date = st.text_input("تاريخ القيد المالي (صيغة YYYY-MM-DD):", value=selected_r_row['receipt_date'])
-                with rec_c5: 
-                    edit_r_notes = st.text_input("ملاحظات / رقم الإيصال اليدوي والمستند:", value=selected_r_row['notes'])
-                    
-                b1, b2 = st.columns(2)
-                with b1:
-                    if st.form_submit_button("💾 حفظ تعديلات الإيصال وتأكيد المزامنة"):
+                with st.form("quick_audit_update_form"):
+                    ac1, ac2, ac3 = st.columns(3)
+                    with ac1:
+                        audit_cust_name = st.text_input("اسم حساب العميل (مغلق ومحمي):", value=selected_audit_row['customer_name'], disabled=True)
+                    with ac2:
+                        audit_container_num = st.text_input("رقم الحاوية / الحاويات:", value=selected_audit_row['container_number'])
+                    with ac3:
+                        audit_bl_num = st.text_input("رقم البوليصة الرئيسي:", value=selected_audit_row['bl_number'])
+                        
+                    ac4, ac5, ac6 = st.columns(3)
+                    with ac4:
+                        audit_date_val = st.text_input("تاريخ الدخول والتقييد (YYYY-MM-DD):", value=selected_audit_row['shipment_date'])
+                    with ac5:
+                        audit_do_num_val = st.text_input("رقم إذن / أمر التسليم (D.O):", value=selected_audit_row['do_number'])
+                    with ac6:
+                        audit_do_value_val = st.number_input("قيمة أمر التسليم الفعالة (بالدينار LYD):", value=float(selected_audit_row['do_value_lyd']))
+                        
+                    ac7, ac8 = st.columns(2)
+                    with ac7:
+                        audit_agency_val = st.number_input("تكلفة شحن الوكالة الكلية (بالدولار USD):", value=float(selected_audit_row['agency_freight_usd']))
+                    with ac8:
+                        audit_final_val = st.number_input("سعر الشحن النهائي المقيد على العميل (بالدولار USD):", value=float(selected_audit_row['final_freight_usd']))
+                        
+                    if st.form_submit_button("🚀 حفظ وتأكيد استكمال البيانات ومزامنتها"):
                         conn = get_db_connection()
                         try:
                             with conn.cursor() as cursor:
                                 cursor.execute(
-                                    'UPDATE receipts SET amount=%s, currency=%s, receipt_date=%s, notes=%s WHERE id=%s', 
-                                    (edit_r_amount, edit_r_curr, parse_any_date(edit_r_date), edit_r_notes.strip(), receipt_id)
+                                    'UPDATE shipments SET container_number=%s, bl_number=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s',
+                                    (
+                                        audit_container_num.strip().upper(),
+                                        audit_bl_num.strip().upper(),
+                                        parse_any_date(audit_date_val),
+                                        audit_do_num_val.strip(),
+                                        audit_do_value_val,
+                                        audit_agency_val,
+                                        audit_final_val,
+                                        audit_id
+                                    )
                                 )
                                 conn.commit()
-                            st.success("🎉 تم تحديث ومزامنة بيانات الإيصال المالي بنجاح!")
+                            st.success("🎉 تم استكمال وتحديث بيانات الشحنة بنجاح في النظام السحابي!")
                             st.rerun()
                         except Exception as e:
-                            st.error(f"خطأ في الحفظ السحابي: {e}")
+                            st.error(f"❌ خطأ أثناء الحفظ الفوري للبيانات: {e}")
                         finally:
                             conn.close()
-                with b2:
-                    if st.form_submit_button("🗑️ حذف السند المالي نهائياً"):
+
+
+# ==============================================================================
+# البوابة الثانية: حركة الحاويات والشحنات
+# ==============================================================================
+elif department == "🚢 حركة الحاويات والشحنات":
+    tab_manual, tab_excel_u, tab_modify = st.tabs(["➕ إضافة بوليصة جديدة يدوياً", "📥 رفع وتحميل ملف إكسل", "📝 مراجعة وتعديل وحذف الشحنات"])
+    
+    conn = get_db_connection()
+    try:
+        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
+        shipments = pd.read_sql_query("SELECT * FROM shipments ORDER BY id DESC", conn)
+    except Exception as e:
+        st.error(f"خطأ في قاعدة البيانات: {e}")
+    finally:
+        conn.close()
+
+    # --- إضافة بوليصة يدوياً ---
+    with tab_manual:
+        st.title("➕ إضافة بوليصة / شحنة جمركية يدوية")
+        if customers_df.empty:
+            st.warning("⚠️ يرجى تسجيل وإضافة زبون واحد على الأقل أولاً لتتمكن من ربط الشحنات الجمركية بحسابه المالي.")
+        else:
+            num_containers = st.number_input("حدد كم حاوية تابعة لهذه البوليصة المستهدفة بالتقييد:", min_value=1, max_value=50, value=1, step=1)
+            with st.form("manual_shipment_form_v2", clear_on_submit=True):
+                sc1, sc2 = st.columns(2)
+                with sc1: 
+                    s_cust = st.selectbox("ارتباط باسم الزبون المسجل بالمنظومة:", customers_df['name'])
+                with sc2: 
+                    s_bl = st.text_input("رقم البوليصة الرئيسي (MBL / HBL):")
+                    
+                container_inputs = []
+                st.write("📝 أدخل أرقام الحاويات الخاصة بهذه البوليصة في الحقول أدناه:")
+                grid_cols_num = min(num_containers, 4)
+                c_cols = st.columns(grid_cols_num)
+                for i in range(num_containers):
+                    col_idx = i % grid_cols_num
+                    with c_cols[col_idx]:
+                        container_inputs.append(st.text_input(f"رقم الحاوية {i+1}:", key=f"manual_container_input_{i}"))
+                        
+                sc4, sc5, sc6 = st.columns(3)
+                with sc4: 
+                    s_date = st.date_input("تاريخ الاستلام الفعلي بالميناء:", datetime.now())
+                with sc5: 
+                    s_do_num = st.text_input("رقم إذن / أمر التسليم (D.O):")
+                with sc6: 
+                    s_do_val = st.number_input("قيمة أمر التسليم الإجمالية المحسوبة (بالدينار LYD):", min_value=0.0, step=100.0)
+                    
+                sc7, sc8 = st.columns(2)
+                with sc7: 
+                    s_agency = st.number_input("قيمة شحن الوكالة الكلية للشحنة (بالدولار USD):", min_value=0.0, step=50.0)
+                with sc8: 
+                    s_final = st.number_input("سعر نولون الشحن النهائي المقيد على الزبون (بالدولار USD):", min_value=0.0, step=50.0)
+                    
+                if st.form_submit_button("🚀 حفظ وإضافة الشحنة والبوليصة الجمركية"):
+                    valid_containers = [c.strip().upper() for c in container_inputs if c.strip()]
+                    if not valid_containers:
+                        st.error("❌ خطأ: يرجى كتابة رقم حاوية واحد على الأقل لإدراج الشحنة بنجاح.")
+                    elif s_bl.strip() == "":
+                        st.error("❌ خطأ: يجب إدخال رقم البوليصة الرئيسي لربط الحاويات.")
+                    else:
+                        combined_containers_string = " , ".join(valid_containers)
                         conn = get_db_connection()
                         try:
                             with conn.cursor() as cursor:
-                                cursor.execute("DELETE FROM receipts WHERE id=%s", (receipt_id,))
+                                cursor.execute(
+                                    'INSERT INTO shipments (customer_name, container_number, bl_number, shipment_date, do_number, do_value_lyd, agency_freight_usd, final_freight_usd) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', 
+                                    (s_cust, combined_containers_string, s_bl.strip().upper(), s_date.strftime('%Y-%m-%d'), s_do_num.strip(), s_do_val, s_agency, s_final)
+                                )
                                 conn.commit()
-                            st.success("🚨 تم مسح السند المالي وشطبه بالكامل من الدفاتر السحابية.")
+                            st.success("🎉 تم حفظ البوليصة الجمركية الجديدة بنجاح وتم مزامنتها مع الموقف المالي للعميل!")
                             st.rerun()
                         except Exception as e:
-                            st.error(f"خطأ في الحذف: {e}")
+                            st.error(f"حدث خطأ جراء الحفظ: {e}")
                         finally:
                             conn.close()
 
+    # --- استيراد الإكسل ---
+    with tab_excel_u:
+        st.title("📥 معالج رفع البيانات تلقائياً وتوطينها من ملف Excel")
+        st.info("ℹ️ تأكد من تطابق ترويسة الحقول أو قم بمطابقتها يدوياً عبر محرك الربط الذكي بالأسفل.")
+        uploaded_file = st.file_uploader("يرجى اختيار ملف الإكسل المستهدف للرفع والدمج السحابي:", type=["xlsx", "xls"])
+        
+        if uploaded_file is not None:
+            try:
+                df = pd.read_excel(uploaded_file)
+                st.success("🎉 تم تحميل وقراءة ملف الإكسل بنجاح! يرجى مطابقة أعمدة الملف بأعمدة المنظومة:")
+                
+                all_cols = list(df.columns)
+                c1, c2, c3, c4 = st.columns(4)
+                with c1: 
+                    col_cust = st.selectbox("عمود اسم الزبون الفعلي", all_cols, index=0)
+                with c2: 
+                    col_cont = st.selectbox("عمود رقم الحاوية (يقبل حاويات مدمجة بالخلية)", all_cols, index=min(1, len(all_cols)-1))
+                with c3: 
+                    col_bl = st.selectbox("عمود رقم البوليصة الجمركي", all_cols, index=min(2, len(all_cols)-1))
+                with c4: 
+                    col_date = st.selectbox("عمود تاريخ الاستلام والتقييد", all_cols, index=min(3, len(all_cols)-1))
+                    
+                c5, c6, c7, c8 = st.columns(4)
+                with c5: 
+                    col_donum = st.selectbox("عمود رقم إذن / أمر التسليم D.O", all_cols, index=min(4, len(all_cols)-1))
+                with c6: 
+                    col_dovald = st.selectbox("عمود قيمة أمر التسليم (بالدينار LYD)", all_cols, index=min(5, len(all_cols)-1))
+                with c7: 
+                    col_agency = st.selectbox("عمود نولون شحن الوكالة (بالدولار USD)", all_cols, index=min(6, len(all_cols)-1))
+                with c8: 
+                    col_final = st.selectbox("عمود الشحن النهائي للزبون (بالدولار USD)", all_cols, index=min(7, len(all_cols)-1))
+                    
+                st.write("🔍 **معاينة سريعة لأول 3 صفوف من الملف المرفوع:**")
+                st.dataframe(df.head(3), use_container_width=True)
+                
+                if st.button("🚀 بدء دمج البيانات والمطابقة الذكية بقاعدة البيانات أونلاين"):
+                    conn = get_db_connection()
+                    try:
+                        with conn.cursor() as cursor:
+                            insert_count, update_count = 0, 0
+                            for index, row in df.iterrows():
+                                cust_name = str(row[col_cust]).strip()
+                                if cust_name == "" or pd.isnull(row[col_cust]): 
+                                    continue
+                                cursor.execute("INSERT INTO customers (name) VALUES (%s) ON CONFLICT (name) DO NOTHING", (cust_name,))
+                                
+                                bl = str(row[col_bl]).strip().upper()
+                                raw_date = row[col_date]
+                                date_str = parse_any_date(raw_date)
+                                
+                                new_do_num = str(row[col_donum]).strip()
+                                new_do_val = safe_float(row[col_dovald])
+                                new_agency = safe_float(row[col_agency])
+                                new_final = safe_float(row[col_final])
+                                
+                                raw_containers = str(row[col_cont]).strip()
+                                container_list = re.split(r'[,/؛;\s\n]+', raw_containers)
+                                container_list = [c.strip().upper() for c in container_list if c.strip()]
+                                if not container_list: 
+                                    container_list = [""]
+                                    
+                                for container in container_list:
+                                    cursor.execute("SELECT id FROM shipments WHERE container_number = %s AND bl_number = %s", (container, bl))
+                                    existing = cursor.fetchone()
+                                    if existing:
+                                        cursor.execute(
+                                            'UPDATE shipments SET customer_name=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s', 
+                                            (cust_name, date_str, new_do_num, new_do_val, new_agency, new_final, existing['id'])
+                                        )
+                                        update_count += 1
+                                    else:
+                                        cursor.execute(
+                                            'INSERT INTO shipments (customer_name, container_number, bl_number, shipment_date, do_number, do_value_lyd, agency_freight_usd, final_freight_usd) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', 
+                                            (cust_name, container, bl, date_str, new_do_num, new_do_val, new_agency, new_final)
+                                        )
+                                        insert_count += 1
+                            conn.commit()
+                            st.success(f"🎉 تكللت عملية التوطين السحابي بالنجاح! تم إدراج {insert_count} بوليصة جديدة وتحديث {update_count} بوليصة جارية.")
+                    except Exception as e:
+                        st.error(f"❌ حدث خطأ غير متوقع أثناء الدمج: {e}")
+                    finally:
+                        conn.close()
+            except Exception as e:
+                st.error(f"❌ حدث خطأ فني أثناء قراءة ومعالجة الملف: {e}")
+
+    # --- مراجعة وتعديل وحذف الشحنات ---
+    with tab_modify:
+        st.title("📝 مراجعة وتحديث القيود والشحنات الفردية")
+        if shipments.empty:
+            st.info("ℹ️ لا توجد شحنات مسجلة بالدفاتر حالياً.")
+        else:
+            search_query = st.text_input("🔍 صندوق البحث الذكي (ابحث برقم الحاوية، رقم البوليصة، أو اسم الزبون):")
+            filtered_df = shipments.copy()
+            if search_query.strip():
+                q = search_query.strip().lower()
+                filtered_df = shipments[
+                    shipments['container_number'].astype(str).str.lower().str.contains(q, na=False) | 
+                    shipments['bl_number'].astype(str).str.lower().str.contains(q, na=False) | 
+                    shipments['customer_name'].astype(str).str.lower().str.contains(q, na=False)
+                ]
+                
+            if filtered_df.empty:
+                st.warning("⚠️ لم يسفر البحث عن أي نتائج مطابقة.")
+            else:
+                filtered_df['selector_text'] = (
+                    "بوليصة جمركية: " + filtered_df['bl_number'].astype(str) + 
+                    " | حاوية رقم: " + filtered_df['container_number'].astype(str) + 
+                    " (" + filtered_df['customer_name'] + ")"
+                )
+                selected_option = st.selectbox("اختر الشحنة الدقيقة المستهدفة بالتعديل أو الإلغاء الكامل:", filtered_df['selector_text'].tolist())
+                selected_row = filtered_df[filtered_df['selector_text'] == selected_option].iloc[0]
+                shipment_id = int(selected_row['id'])
+                
+                with st.form("edit_ship_form_v2"):
+                    ec1, ec2, ec3 = st.columns(3)
+                    with ec1: 
+                        edit_cust = st.text_input("اسم حساب العميل المرتبط (مغلق ومحمي)", value=selected_row['customer_name'], disabled=True)
+                    with ec2: 
+                        edit_cont = st.text_input("أرقام الحاوية / الحاويات التابعة:", value=selected_row['container_number'])
+                    with ec3: 
+                        edit_bl = st.text_input("رقم البوليصة الرئيسي:", value=selected_row['bl_number'])
+                        
+                    ec4, ec5, ec6 = st.columns(3)
+                    with ec4: 
+                        edit_date = st.text_input("تاريخ الدخول والتقييد (صيغة YYYY-MM-DD):", value=selected_row['shipment_date'])
+                    with ec5: 
+                        edit_do_num = st.text_input("رقم أمر التسليم (D.O):", value=selected_row['do_number'])
+                    with ec6: 
+                        edit_do_val = st.number_input("قيمة أمر التسليم المعتمدة (بالدينار LYD):", value=float(selected_row['do_value_lyd']))
+                        
+                    ec7, ec8 = st.columns(2)
+                    with ec7: 
+                        edit_agency = st.number_input("تكلفة شحن ونولون الوكالة الكلية (بالدولار USD):", value=float(selected_row['agency_freight_usd']))
+                    with ec8: 
+                        edit_final = st.number_input("سعر الشحن النهائي المفتوح للزبون (بالدولار USD):", value=float(selected_row['final_freight_usd']))
+                        
+                    b1, b2 = st.columns(2)
+                    with b1:
+                        if st.form_submit_button("💾 حفظ وتأكيد مزامنة البيانات المعدلة"):
+                            conn = get_db_connection()
+                            try:
+                                with conn.cursor() as cursor:
+                                    cursor.execute(
+                                        'UPDATE shipments SET container_number=%s, bl_number=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s', 
+                                        (edit_cont.strip().upper(), edit_bl.strip().upper(), parse_any_date(edit_date), edit_do_num.strip(), edit_do_val, edit_agency, edit_final, shipment_id)
+                                    )
+                                    conn.commit()
+                                st.success("🎉 تم تعديل وحفظ بيانات الشحنة بنجاح بالمخدم السحابي!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"حدث خطأ جراء التعديل: {e}")
+                            finally:
+                                conn.close()
+                    with b2:
+                        if st.form_submit_button("🗑️ حذف وإلغاء هذه الشحنة تماماً"):
+                            conn = get_db_connection()
+                            try:
+                                with conn.cursor() as cursor:
+                                    cursor.execute("DELETE FROM shipments WHERE id=%s", (shipment_id,))
+                                    conn.commit()
+                                st.success("🚨 تم حذف البوليصة والشحنة بالكامل وبصورة لا رجعة فيها.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"خطأ أثناء الحذف الفردي: {e}")
+                            finally:
+                                conn.close()
+
 
 # ==============================================================================
-# القسم الخامس: إضافة شحنة جديدة يدوياً أو بنسق LCL
+# البوابة الثالثة: الخزينة والتحصيلات المالية
 # ==============================================================================
-elif menu == "➕ إضافة شحنة جديدة (يدوي/LCL)":
-    st.title("➕ إضافة بوليصة / شحنة جمركية جديدة يدويًا بدعم الحاويات المتعددة")
+elif department == "💵 الخزينة والتحصيلات المالية":
+    tab_add_rec, tab_edit_rec = st.tabs(["💰 تسجيل إيصال قبض جديد", "✏️ تعديل وحذف إيصالات الخزينة"])
+    
+    conn = get_db_connection()
+    try:
+        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
+        receipts_all = pd.read_sql_query("SELECT * FROM receipts ORDER BY id DESC", conn)
+    except Exception as e:
+        st.error(f"خطأ في جلب بيانات الخزينة: {e}")
+    finally:
+        conn.close()
+
+    # --- تسجيل إيصال قبض جديد ---
+    with tab_add_rec:
+        st.title("💰 إدارة المدفوعات وإيداع الخزينة")
+        if customers_df.empty:
+            st.warning("⚠️ يرجى إضافة حساب زبون مسجل واحد على الأقل أولاً لتتمكن من إدراج المبالغ المالية.")
+        else:
+            st.subheader("➕ تحرير وتسجيل إيصال سداد مالي جديد")
+            with st.form("receipt_form", clear_on_submit=True):
+                rc1, rc2, rc3 = st.columns(3)
+                with rc1: 
+                    r_cust = st.selectbox("قبض من الزبون المسجل:", customers_df['name'])
+                with rc2: 
+                    r_amount = st.number_input("قيمة المبلغ المقبوض بالكامل:", min_value=0.0, step=100.0, format="%.2f")
+                with rc3: 
+                    r_curr = st.selectbox("تحديد العملة المحصلة:", ["دينار ليبي LYD", "دولار أمريكي USD"])
+                    
+                rc4, rc5 = st.columns([1, 2])
+                with rc4: 
+                    r_date = st.date_input("تاريخ القبض والتقييد المالي:", datetime.now())
+                with rc5: 
+                    r_notes = st.text_input("رقم الإيصال اليدوي أو ملاحظات السند والبيان:")
+                    
+                if st.form_submit_button("💾 حفظ وإيداع الإيصال بقاعدة البيانات"):
+                    if r_amount <= 0:
+                        st.error("❌ خطأ: لا يمكن تقييد إيصال مالي بقيمة صفر أو قيمة سالبة.")
+                    else:
+                        conn = get_db_connection()
+                        try:
+                            with conn.cursor() as cursor:
+                                cursor.execute(
+                                    'INSERT INTO receipts (customer_name, amount, currency, receipt_date, notes) VALUES (%s, %s, %s, %s, %s)', 
+                                    (r_cust, r_amount, r_curr, r_date.strftime('%Y-%m-%d'), r_notes.strip())
+                                )
+                                conn.commit()
+                            st.success(f"🎉 تم تسجيل وإيداع مبلغ {r_amount:,.2f} ({r_curr}) بحساب الزبون [{r_cust}] بنجاح!")
+                        except Exception as e:
+                            st.error(f"حدث خطأ أثناء حفظ الإيصال: {e}")
+                        finally:
+                            conn.close()
+
+    # --- تعديل وحذف الإيصالات ---
+    with tab_edit_rec:
+        st.title("✏️ مراجعة والتحكم في إيصالات وسندات المقبوضات")
+        if receipts_all.empty:
+            st.info("ℹ️ الخزينة خالية تماماً ولا توجد إيصالات مسجلة حالياً.")
+        else:
+            search_receipt = st.text_input("🔍 ابحث في الإيصالات (عبر اسم الزبون أو ملاحظات السند):")
+            filtered_r = receipts_all.copy()
+            if search_receipt.strip():
+                sr = search_receipt.strip().lower()
+                filtered_r = receipts_all[
+                    receipts_all['customer_name'].str.lower().str.contains(sr, na=False) | 
+                    receipts_all['notes'].str.lower().str.contains(sr, na=False)
+                ]
+                
+            if filtered_r.empty:
+                st.warning("⚠️ لم يتم العثور على أي نتائج تطابق عملية البحث.")
+            else:
+                filtered_r['selector_text'] = (
+                    filtered_r['customer_name'] + 
+                    " | قيمة المبلغ: " + filtered_r['amount'].astype(str) + 
+                    " (" + filtered_r['currency'] + ") | التاريخ: " + 
+                    filtered_r['receipt_date'] + " | البيان: " + filtered_r['notes']
+                )
+                selected_receipt_opt = st.selectbox("اختر الإيصال المستهدف للتعديل أو الإزالة السحابية:", filtered_r['selector_text'])
+                selected_r_row = filtered_r[filtered_r['selector_text'] == selected_receipt_opt].iloc[0]
+                receipt_id = int(selected_r_row['id'])
+                
+                with st.form("edit_r_form"):
+                    rec_c1, rec_c2, rec_c3 = st.columns(3)
+                    with rec_c1: 
+                        edit_r_cust = st.text_input("اسم حساب الزبون (غير قابل للتغيير من هنا)", value=selected_r_row['customer_name'], disabled=True)
+                    with rec_c2: 
+                        edit_r_amount = st.number_input("تعديل قيمة المبلغ المالي:", value=float(selected_r_row['amount']))
+                    with rec_c3: 
+                        edit_r_curr = st.selectbox("تعديل العملة المودعة:", ["دينار ليبي LYD", "دولار أمريكي USD"], index=0 if "LYD" in selected_r_row['currency'] else 1)
+                        
+                    rec_c4, rec_c5 = st.columns(2)
+                    with rec_c4: 
+                        edit_r_date = st.text_input("تاريخ القيد المالي (صيغة YYYY-MM-DD):", value=selected_r_row['receipt_date'])
+                    with rec_c5: 
+                        edit_r_notes = st.text_input("ملاحظات / رقم الإيصال اليدوي والمستند:", value=selected_r_row['notes'])
+                        
+                    b1, b2 = st.columns(2)
+                    with b1:
+                        if st.form_submit_button("💾 حفظ تعديلات الإيصال وتأكيد المزامنة"):
+                            conn = get_db_connection()
+                            try:
+                                with conn.cursor() as cursor:
+                                    cursor.execute(
+                                        'UPDATE receipts SET amount=%s, currency=%s, receipt_date=%s, notes=%s WHERE id=%s', 
+                                        (edit_r_amount, edit_r_curr, parse_any_date(edit_r_date), edit_r_notes.strip(), receipt_id)
+                                    )
+                                    conn.commit()
+                                st.success("🎉 تم تحديث ومزامنة بيانات الإيصال المالي بنجاح!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"خطأ في الحفظ السحابي: {e}")
+                            finally:
+                                conn.close()
+                    with b2:
+                        if st.form_submit_button("🗑️ حذف السند المالي نهائياً"):
+                            conn = get_db_connection()
+                            try:
+                                with conn.cursor() as cursor:
+                                    cursor.execute("DELETE FROM receipts WHERE id=%s", (receipt_id,))
+                                    conn.commit()
+                                st.success("🚨 تم مسح السند المالي وشطبه بالكامل من الدفاتر السحابية.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"خطأ في الحذف: {e}")
+                            finally:
+                                conn.close()
+
+
+# ==============================================================================
+# البوابة الرابعة: شؤون الزبائن وصيانة النظام
+# ==============================================================================
+elif department == "⚙️ شؤون الزبائن وصيانة النظام":
+    tab_crm, tab_system = st.tabs(["👥 إدارة وحسابات الزبائن CRM", "💥 تصفير وصيانة المنظومة المجمعة"])
     
     conn = get_db_connection()
     try:
         customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
     except Exception as e:
-        st.error(f"خطأ: {e}")
+        st.error(f"خطأ في الإدارة الفنية: {e}")
     finally:
         conn.close()
-        
-    if customers_df.empty:
-        st.warning("⚠️ يرجى تسجيل وإضافة زبون واحد على الأقل أولاً لتتمكن من ربط الشحنات الجمركية بحسابه المالي.")
-    else:
-        num_containers = st.number_input("حدد كم حاوية تابعة لهذه البوليصة المستهدفة بالتقييد:", min_value=1, max_value=50, value=1, step=1)
-        
-        with st.form("manual_shipment_form_v2", clear_on_submit=True):
-            sc1, sc2 = st.columns(2)
-            with sc1: 
-                s_cust = st.selectbox("ارتباط باسم الزبون المسجل بالمنظومة:", customers_df['name'])
-            with sc2: 
-                s_bl = st.text_input("رقم البوليصة الرئيسي (MBL / HBL):")
-                
-            container_inputs = []
-            st.write("📝 أدخل أرقام الحاويات الخاصة بهذه البوليصة في الحقول أدناه:")
-            
-            # عرض حقول الحاويات ديناميكياً لتوزيع ذكي
-            grid_cols_num = min(num_containers, 4)
-            c_cols = st.columns(grid_cols_num)
-            for i in range(num_containers):
-                col_idx = i % grid_cols_num
-                with c_cols[col_idx]:
-                    container_inputs.append(st.text_input(f"رقم الحاوية {i+1}:", key=f"manual_container_input_{i}"))
-                    
-            sc4, sc5, sc6 = st.columns(3)
-            with sc4: 
-                s_date = st.date_input("تاريخ الاستلام الفعلي بالميناء:", datetime.now())
-            with sc5: 
-                s_do_num = st.text_input("رقم إذن / أمر التسليم (D.O):")
-            with sc6: 
-                s_do_val = st.number_input("قيمة أمر التسليم الإجمالية المحسوبة (بالدينار LYD):", min_value=0.0, step=100.0)
-                
-            sc7, sc8 = st.columns(2)
-            with sc7: 
-                s_agency = st.number_input("قيمة شحن الوكالة الكلية للشحنة (بالدولار USD):", min_value=0.0, step=50.0)
-            with sc8: 
-                s_final = st.number_input("سعر نولون الشحن النهائي المقيد على الزبون (بالدولار USD):", min_value=0.0, step=50.0)
-                
-            if st.form_submit_button("🚀 حفظ وإضافة الشحنة والبوليصة الجمركية"):
-                valid_containers = [c.strip().upper() for c in container_inputs if c.strip()]
-                
-                if not valid_containers:
-                    st.error("❌ خطأ: يرجى كتابة رقم حاوية واحد على الأقل لإدراج الشحنة بنجاح.")
-                elif s_bl.strip() == "":
-                    st.error("❌ خطأ: يجب إدخال رقم البوليصة الرئيسي لربط الحاويات.")
-                else:
-                    combined_containers_string = " , ".join(valid_containers)
-                    conn = get_db_connection()
-                    try:
-                        with conn.cursor() as cursor:
-                            cursor.execute(
-                                'INSERT INTO shipments (customer_name, container_number, bl_number, shipment_date, do_number, do_value_lyd, agency_freight_usd, final_freight_usd) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', 
-                                (s_cust, combined_containers_string, s_bl.strip().upper(), s_date.strftime('%Y-%m-%d'), s_do_num.strip(), s_do_val, s_agency, s_final)
-                            )
-                            conn.commit()
-                        st.success("🎉 تم حفظ البوليصة الجمركية الجديدة بنجاح وتم مزامنتها مع الموقف المالي للعميل!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"حدث خطأ جراء الحفظ: {e}")
-                    finally:
-                        conn.close()
 
-
-# ==============================================================================
-# القسم السادس: رفع البيانات من ملفات إكسل بصورة آلية ومطابقة ذكية
-# ==============================================================================
-elif menu == "📥 رفع ملف إكسل":
-    st.title("📥 معالج رفع البيانات تلقائياً وتوطينها من ملف Excel")
-    
-    st.info("ℹ️ تأكد من تطابق ترويسة الحقول أو قم بمطابقتها يدوياً عبر محرك الربط الذكي بالأسفل.")
-    uploaded_file = st.file_uploader("يرجى اختيار ملف الإكسل المستهدف للرفع والدمج السحابي:", type=["xlsx", "xls"])
-    
-    if uploaded_file is not None:
-        try:
-            df = pd.read_excel(uploaded_file)
-            st.success("🎉 تم تحميل وقراءة ملف الإكسل بنجاح! يرجى مطابقة أعمدة الملف بأعمدة المنظومة:")
-            
-            all_cols = list(df.columns)
-            c1, c2, c3, c4 = st.columns(4)
-            with c1: 
-                col_cust = st.selectbox("عمود اسم الزبون الفعلي", all_cols, index=0)
-            with c2: 
-                col_cont = st.selectbox("عمود رقم الحاوية (يقبل حاويات مدمجة بالخلية)", all_cols, index=min(1, len(all_cols)-1))
-            with c3: 
-                col_bl = st.selectbox("عمود رقم البوليصة الجمركي", all_cols, index=min(2, len(all_cols)-1))
-            with c4: 
-                col_date = st.selectbox("عمود تاريخ الاستلام والتقييد", all_cols, index=min(3, len(all_cols)-1))
-                
-            c5, c6, c7, c8 = st.columns(4)
-            with c5: 
-                col_donum = st.selectbox("عمود رقم إذن / أمر التسليم D.O", all_cols, index=min(4, len(all_cols)-1))
-            with c6: 
-                col_dovald = st.selectbox("عمود قيمة أمر التسليم (بالدينار LYD)", all_cols, index=min(5, len(all_cols)-1))
-            with c7: 
-                col_agency = st.selectbox("عمود نولون شحن الوكالة (بالدولار USD)", all_cols, index=min(6, len(all_cols)-1))
-            with c8: 
-                col_final = st.selectbox("عمود الشحن النهائي للزبون (بالدولار USD)", all_cols, index=min(7, len(all_cols)-1))
-                
-            st.write("🔍 **معاينة سريعة لأول 3 صفوف من الملف المرفوع:**")
-            st.dataframe(df.head(3), use_container_width=True)
-            
-            if st.button("🚀 بدء دمج البيانات والمطابقة الذكية بقاعدة البيانات أونلاين"):
-                conn = get_db_connection()
-                try:
-                    with conn.cursor() as cursor:
-                        insert_count, update_count = 0, 0
-                        
-                        for index, row in df.iterrows():
-                            cust_name = str(row[col_cust]).strip()
-                            if cust_name == "" or pd.isnull(row[col_cust]): 
-                                continue
-                                
-                            # إدراج اسم الزبون تلقائياً بجدول الحسابات في حال لم يكن مسجلاً سابقاً
-                            cursor.execute("INSERT INTO customers (name) VALUES (%s) ON CONFLICT (name) DO NOTHING", (cust_name,))
-                            
-                            bl = str(row[col_bl]).strip().upper()
-                            raw_date = row[col_date]
-                            date_str = parse_any_date(raw_date)
-                            
-                            new_do_num = str(row[col_donum]).strip()
-                            new_do_val = safe_float(row[col_dovald])
-                            new_agency = safe_float(row[col_agency])
-                            new_final = safe_float(row[col_final])
-                            
-                            raw_containers = str(row[col_cont]).strip()
-                            # تكسير وفصل الحاويات الجارية المكتوبة بنص واحد عبر المعالج الذكي
-                            container_list = re.split(r'[,/؛;\s\n]+', raw_containers)
-                            container_list = [c.strip().upper() for c in container_list if c.strip()]
-                            
-                            if not container_list: 
-                                container_list = [""]
-                                
-                            for container in container_list:
-                                # فحص وجود الشحنة مسبقاً لمنع التكرار وتحديثها إن وجدت
-                                cursor.execute("SELECT id FROM shipments WHERE container_number = %s AND bl_number = %s", (container, bl))
-                                existing = cursor.fetchone()
-                                
-                                if existing:
-                                    cursor.execute(
-                                        'UPDATE shipments SET customer_name=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s', 
-                                        (cust_name, date_str, new_do_num, new_do_val, new_agency, new_final, existing['id'])
-                                    )
-                                    update_count += 1
-                                else:
-                                    cursor.execute(
-                                        'INSERT INTO shipments (customer_name, container_number, bl_number, shipment_date, do_number, do_value_lyd, agency_freight_usd, final_freight_usd) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', 
-                                        (cust_name, container, bl, date_str, new_do_num, new_do_val, new_agency, new_final)
-                                    )
-                                    insert_count += 1
-                                    
-                        conn.commit()
-                        st.success(f"🎉 تكللت عملية التوطين السحابي بالنجاح الملوكي! تم إدراج {insert_count} بوليصة جديدة وتحديث {update_count} بوليصة جارية.")
-                except Exception as e:
-                    st.error(f"❌ حدث خطأ غير متوقع أثناء الدمج السحابي للبيانات: {e}")
-                finally:
-                    conn.close()
-        except Exception as e:
-            st.error(f"❌ حدث خطأ فني أثناء قراءة ومعالجة بنية ملف الإكسل: {e}")
-
-
-# ==============================================================================
-# القسم السابع: إدارة وتحديث أسماء وحسابات الزبائن (CRM)
-# ==============================================================================
-elif menu == "👥 إدارة الزبائن":
-    st.title("👥 التحكم الكامل والرقابة في قائمة وحسابات زبائن الشركة")
-    
-    conn = get_db_connection()
-    try:
-        tab1, tab2, tab3 = st.tabs(["➕ إضافة زبون جديد لحسابات الشركة", "✏️ تعديل ومطابقة اسم حساب جاري", "❌ حذف وتصفية حساب زبون"])
+    # --- إدارة الزبائن CRM ---
+    with tab_crm:
+        st.title("👥 التحكم الكامل والرقابة في قائمة الزبائن")
+        tab1, tab2, tab3 = st.tabs(["➕ إضافة زبون جديد", "✏️ تعديل اسم حساب جاري", "❌ حذف وتصفية زبون"])
         
         with tab1:
             new_cust = st.text_input("أدخل الاسم الكامل للزبون أو الكيان التجاري:")
             if st.button("تأكيد تسجيل وإدراج العميل"):
                 if new_cust.strip():
+                    conn = get_db_connection()
                     try:
                         with conn.cursor() as cursor:
                             cursor.execute("INSERT INTO customers (name) VALUES (%s)", (new_cust.strip(),))
@@ -1244,19 +1277,20 @@ elif menu == "👥 إدارة الزبائن":
                         st.rerun()
                     except Exception:
                         st.error("⚠️ خطأ: هذا الزبون أو الحساب مسجل مسبقاً بقاعدة البيانات.")
+                    finally:
+                        conn.close()
                 else:
                     st.error("❌ لا يمكن ترك حقل الاسم فارغاً.")
                     
         with tab2:
-            customers = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
-            if not customers.empty:
-                cust_to_edit = st.selectbox("اختر حساب الزبون المراد تعديل مسماه بالكامل:", customers['name'])
+            if not customers_df.empty:
+                cust_to_edit = st.selectbox("اختر حساب الزبون المراد تعديل مسماه بالكامل:", customers_df['name'])
                 new_name = st.text_input("أدخل الاسم الجديد المصحح والمطابق:")
                 if st.button("تأكيد تعديل ومزامنة المسمى بجميع الجداول"):
                     if new_name.strip():
+                        conn = get_db_connection()
                         try:
                             with conn.cursor() as cursor:
-                                # تعديل الاسم بجدول العملاء وجدول الحاويات وجدول الإيصالات للمحافظة على تماسك البيانات ورابطة العزل
                                 cursor.execute("UPDATE customers SET name = %s WHERE name = %s", (new_name.strip(), cust_to_edit))
                                 cursor.execute("UPDATE shipments SET customer_name = %s WHERE customer_name = %s", (new_name.strip(), cust_to_edit))
                                 cursor.execute("UPDATE receipts SET customer_name = %s WHERE customer_name = %s", (new_name.strip(), cust_to_edit))
@@ -1265,14 +1299,17 @@ elif menu == "👥 إدارة الزبائن":
                             st.rerun()
                         except Exception as e:
                             st.error(f"خطأ أثناء التعديل: {e}")
+                        finally:
+                            conn.close()
             else:
                 st.info("لا توجد حسابات زبائن حالياً.")
                 
         with tab3:
-            if not customers.empty:
-                cust_to_del = st.selectbox("اختر اسم حساب العميل لإزالته وشطب سجلاته نهائياً:", customers['name'])
+            if not customers_df.empty:
+                cust_to_del = st.selectbox("اختر اسم حساب العميل لإزالته وشطب سجلاته نهائياً:", customers_df['name'])
                 st.warning(f"🚨 تحذير: هذا الخيار سيقوم بحذف حساب [{cust_to_del}] بالكامل وشطب كافة حاوياته وإيصالاته التابعة من النظام!")
-                if st.button("موافق، تأكيد الحذف النهائي والنهائي"):
+                if st.button("موافق، تأكيد الحذف النهائي"):
+                    conn = get_db_connection()
                     try:
                         with conn.cursor() as cursor:
                             cursor.execute("DELETE FROM customers WHERE name = %s", (cust_to_del,))
@@ -1283,169 +1320,64 @@ elif menu == "👥 إدارة الزبائن":
                         st.rerun()
                     except Exception as e:
                         st.error(f"خطأ أثناء الحذف: {e}")
+                    finally:
+                        conn.close()
             else:
                 st.info("لا توجد حسابات زبائن حالياً.")
-    finally:
-        conn.close()
 
-
-# ==============================================================================
-# القسم الثامن: محرك البحث المتقدم والتحكم الفردي في الشحنات
-# ==============================================================================
-elif menu == "📝 تعديل وحذف الشحنات":
-    st.title("📝 محرك البحث المتقدم والتحكم الفردي والميداني في الحاويات والشحنات")
-    
-    conn = get_db_connection()
-    try:
-        shipments = pd.read_sql_query("SELECT * FROM shipments ORDER BY id DESC", conn)
-    except Exception as e:
-        st.error(f"خطأ: {e}")
-    finally:
-        conn.close()
-        
-    if shipments.empty:
-        st.info("ℹ️ لا توجد شحنات مسجلة بالدفاتر حالياً.")
-    else:
-        search_query = st.text_input("🔍 صندوق البحث الذكي (ابحث برقم الحاوية، رقم البوليصة، أو اسم حساب الزبون):")
-        filtered_df = shipments.copy()
-        
-        if search_query.strip():
-            q = search_query.strip().lower()
-            filtered_df = shipments[
-                shipments['container_number'].astype(str).str.lower().str.contains(q, na=False) | 
-                shipments['bl_number'].astype(str).str.lower().str.contains(q, na=False) | 
-                shipments['customer_name'].astype(str).str.lower().str.contains(q, na=False)
-            ]
-            
-        if filtered_df.empty:
-            st.warning("⚠️ لم يسفر البحث عن أي نتائج مطابقة.")
-        else:
-            filtered_df['selector_text'] = (
-                "بوليصة جمركية: " + filtered_df['bl_number'].astype(str) + 
-                " | حاوية رقم: " + filtered_df['container_number'].astype(str) + 
-                " (" + filtered_df['customer_name'] + ")"
-            )
-            
-            selected_option = st.selectbox("اختر الشحنة الدقيقة المستهدفة بالتعديل أو الإلغاء الكامل:", filtered_df['selector_text'].tolist())
-            selected_row = filtered_df[filtered_df['selector_text'] == selected_option].iloc[0]
-            shipment_id = int(selected_row['id'])
-            
-            with st.form("edit_ship_form_v2"):
-                ec1, ec2, ec3 = st.columns(3)
-                with ec1: 
-                    edit_cust = st.text_input("اسم حساب العميل المرتبط (مغلق ومحمي)", value=selected_row['customer_name'], disabled=True)
-                with ec2: 
-                    edit_cont = st.text_input("أرقام الحاوية / الحاويات التابعة:", value=selected_row['container_number'])
-                with ec3: 
-                    edit_bl = st.text_input("رقم البوليصة الرئيسي:", value=selected_row['bl_number'])
-                    
-                ec4, ec5, ec6 = st.columns(3)
-                with ec4: 
-                    edit_date = st.text_input("تاريخ الدخول والتقييد (صيغة YYYY-MM-DD):", value=selected_row['shipment_date'])
-                with ec5: 
-                    edit_do_num = st.text_input("رقم أمر التسليم (D.O):", value=selected_row['do_number'])
-                with ec6: 
-                    edit_do_val = st.number_input("قيمة أمر التسليم المعتمدة (بالدينار LYD):", value=float(selected_row['do_value_lyd']))
-                    
-                ec7, ec8 = st.columns(2)
-                with ec7: 
-                    edit_agency = st.number_input("تكلفة شحن ونولون الوكالة الكلية (بالدولار USD):", value=float(selected_row['agency_freight_usd']))
-                with ec8: 
-                    edit_final = st.number_input("سعر الشحن النهائي المفتوح للزبون (بالدولار USD):", value=float(selected_row['final_freight_usd']))
-                    
-                b1, b2 = st.columns(2)
-                with b1:
-                    if st.form_submit_button("💾 حفظ وتأكيد مزامنة البيانات المعدلة"):
-                        conn = get_db_connection()
-                        try:
-                            with conn.cursor() as cursor:
-                                cursor.execute(
-                                    'UPDATE shipments SET container_number=%s, bl_number=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s', 
-                                    (edit_cont.strip().upper(), edit_bl.strip().upper(), parse_any_date(edit_date), edit_do_num.strip(), edit_do_val, edit_agency, edit_final, shipment_id)
-                                )
-                                conn.commit()
-                            st.success("🎉 تم تعديل وحفظ بيانات الشحنة بنجاح بالمخدم السحابي!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"حدث خطأ جراء التعديل: {e}")
-                        finally:
-                            conn.close()
-                with b2:
-                    if st.form_submit_button("🗑️ حذف وإلغاء هذه الشحنة تماماً"):
-                        conn = get_db_connection()
-                        try:
-                            with conn.cursor() as cursor:
-                                cursor.execute("DELETE FROM shipments WHERE id=%s", (shipment_id,))
-                                conn.commit()
-                            st.success("🚨 تم حذف البوليصة والشحنة بالكامل وبصورة لا رجعة فيها.")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"خطأ أثناء الحذف الفردي: {e}")
-                        finally:
-                            conn.close()
-
-
-# ==============================================================================
-# القسم التاسع: شطب وتصفير كافة محتويات قاعدة البيانات أو أرصدة عميل محدد
-# ==============================================================================
-elif menu == "🗑️ مسح البيانات دفعة واحدة":
-    st.title("🗑️ محرك تصفير المنظومة والشطب المجمع لقاعدة البيانات")
-    
-    conn = get_db_connection()
-    try:
-        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
-        tab1, tab2 = st.tabs(["👤 مسح وحذف الحاويات التابعة لعميل معين", "💥 تصفير كلي ونهائي للنظام"])
-        
-        with tab1:
-            if customers_df.empty:
-                st.info("لا توجد حسابات مسجلة حالياً.")
-            else:
-                target_cust = st.selectbox("اختر اسم حساب العميل المراد إزالة شحناته بالكامل:", customers_df['name'], key="bulk_del_select")
-                
-                with conn.cursor() as cursor:
-                    cursor.execute("SELECT id, container_number, bl_number, do_number FROM shipments WHERE customer_name = %s", (target_cust,))
-                    cust_shipments = cursor.fetchall()
-                    
-                if not cust_shipments:
-                    st.info(f"لا توجد حالياً أي حاويات جارية أو شحنات مسجلة باسم الزبون [{target_cust}].")
+    # --- صيانة وتصفير المنظومة ---
+    with tab_system:
+        st.title("🗑️ محرك تصفير المنظومة والشطب المجمع لقاعدة البيانات")
+        conn = get_db_connection()
+        try:
+            tab_del_cust, tab_reset_all = st.tabs(["👤 مسح شحنات زبون معين", "💥 تصفير كلي ونهائي للنظام"])
+            with tab_del_cust:
+                if customers_df.empty:
+                    st.info("لا توجد حسابات مسجلة حالياً.")
                 else:
-                    shipment_options = {f"📦 حاوية: {r['container_number']} | بوليصة: {r['bl_number']} | إذن رقم: {r['do_number']}": r['id'] for r in cust_shipments}
-                    select_all = st.checkbox("🔄 تحديد وتظليل كافة حاويات هذا العميل المسجلة أعلاه")
-                    default_selection = list(shipment_options.keys()) if select_all else []
-                    
-                    selected_labels = st.multiselect("اختر الشحنات المستهدفة بالشطب والإزالة الكلية:", options=list(shipment_options.keys()), default=default_selection)
-                    
-                    if selected_labels:
-                        confirm_word = st.text_input("لتأكيد تنفيذ عملية الشطب المحددة، اكتب كلمة (حذف) صراحة أدناه:")
-                        if st.button("🗑️ تنفيذ تصفية وحذف الحاويات المحددة"):
-                            if confirm_word.strip() == "حذف":
-                                ids_to_delete = [shipment_options[lbl] for lbl in selected_labels]
-                                placeholders = ', '.join(['%s'] * len(ids_to_delete))
-                                
-                                with conn.cursor() as cursor:
-                                    cursor.execute(f"DELETE FROM shipments WHERE id IN ({placeholders})", ids_to_delete)
-                                    conn.commit()
-                                st.success("🚨 تم شطب ومسح الحاويات المحددة للعميل بنجاح!")
-                                st.rerun()
-                            else:
-                                st.error("❌ الكلمة التأكيدية غير صحيحة.")
-                                
-        with tab2:
-            st.warning("⚠️ خطر للغاية! هذا القسم يقوم بمسح المنظومة بالكامل والعودة للصفر وتصفير كافة سجلات الزبائن والتحصيلات المالية!")
-            clear_financials = st.checkbox("الموافقة على مسح وتصفير كافة إيصالات الخزينة وسجل أسماء الزبائن أيضاً")
-            confirm_all = st.text_input("لتأكيد التصفير السحابي المجمع والشامل، اكتب العبارة التأكيدية (Core-Reset) أدناه:")
-            
-            if st.button("💥 بدء التصفير الشامل والنهائي لقواعد البيانات"):
-                if confirm_all == "Core-Reset":
+                    target_cust = st.selectbox("اختر اسم حساب العميل المراد إزالة شحناته بالكامل:", customers_df['name'], key="bulk_del_select")
                     with conn.cursor() as cursor:
-                        cursor.execute("TRUNCATE TABLE shipments RESTART IDENTITY")
-                        if clear_financials:
-                            cursor.execute("TRUNCATE TABLE receipts RESTART IDENTITY")
-                            cursor.execute("TRUNCATE TABLE customers RESTART IDENTITY")
-                        conn.commit()
-                    st.success("💥 تم تصفير قاعدة البيانات السحابية بالكامل وتجهيزها للبدء من جديد بنجاح!")
-                    st.rerun()
-                else:
-                    st.error("❌ العبارة التأكيدية غير متطابقة.")
-    finally:
-        conn.close()
+                        cursor.execute("SELECT id, container_number, bl_number, do_number FROM shipments WHERE customer_name = %s", (target_cust,))
+                        cust_shipments = cursor.fetchall()
+                        
+                    if not cust_shipments:
+                        st.info(f"لا توجد حالياً أي حاويات جارية أو شحنات مسجلة باسم الزبون [{target_cust}].")
+                    else:
+                        shipment_options = {f"📦 حاوية: {r['container_number']} | بوليصة: {r['bl_number']} | إذن رقم: {r['do_number']}": r['id'] for r in cust_shipments}
+                        select_all = st.checkbox("🔄 تحديد وتظليل كافة حاويات هذا العميل المسجلة أعلاه")
+                        default_selection = list(shipment_options.keys()) if select_all else []
+                        selected_labels = st.multiselect("اختر الشحنات المستهدفة بالشطب والإزالة الكلية:", options=list(shipment_options.keys()), default=default_selection)
+                        
+                        if selected_labels:
+                            confirm_word = st.text_input("لتأكيد تنفيذ عملية الشطب المحددة، اكتب كلمة (حذف) صراحة أدناه:")
+                            if st.button("🗑️ تنفيذ تصفية وحذف الحاويات المحددة"):
+                                if confirm_word.strip() == "حذف":
+                                    ids_to_delete = [shipment_options[lbl] for lbl in selected_labels]
+                                    placeholders = ', '.join(['%s'] * len(ids_to_delete))
+                                    with conn.cursor() as cursor:
+                                        cursor.execute(f"DELETE FROM shipments WHERE id IN ({placeholders})", ids_to_delete)
+                                        conn.commit()
+                                    st.success("🚨 تم شطب ومسح الحاويات المحددة للعميل بنجاح!")
+                                    st.rerun()
+                                else:
+                                    st.error("❌ الكلمة التأكيدية غير صحيحة.")
+                                    
+            with tab_reset_all:
+                st.warning("⚠️ خطر للغاية! هذا القسم يقوم بمسح المنظومة بالكامل والعودة للصفر وتصفير كافة سجلات الزبائن والتحصيلات المالية!")
+                clear_financials = st.checkbox("الموافقة على مسح وتصفير كافة إيصالات الخزينة وسجل أسماء الزبائن أيضاً")
+                confirm_all = st.text_input("لتأكيد التصفير السحابي المجمع والشامل، اكتب العبارة التأكيدية (Core-Reset) أدناه:")
+                
+                if st.button("💥 بدء التصفير الشامل والنهائي لقواعد البيانات"):
+                    if confirm_all == "Core-Reset":
+                        with conn.cursor() as cursor:
+                            cursor.execute("TRUNCATE TABLE shipments RESTART IDENTITY")
+                            if clear_financials:
+                                cursor.execute("TRUNCATE TABLE receipts RESTART IDENTITY")
+                                cursor.execute("TRUNCATE TABLE customers RESTART IDENTITY")
+                            conn.commit()
+                        st.success("💥 تم تصفير قاعدة البيانات السحابية بالكامل وتجهيزها للبدء من جديد بنجاح!")
+                        st.rerun()
+                    else:
+                        st.error("❌ العبارة التأكيدية غير متطابقة.")
+        finally:
+            conn.close()
