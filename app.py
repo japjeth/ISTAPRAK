@@ -6,12 +6,14 @@ from datetime import datetime
 import io
 import re
 
+# 1. إعداد الصفحة الأساسي بنسق عريض رصين
 st.set_page_config(
     page_title="إستبرق الدولية - منظومة إدارة الشحنات والرقابة المالية",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
+# 2. حزمة الـ CSS العالمية لثبات الـ RTL وتنسيق الطباعة العمودية المتعددة الصفحات A4 Portrait
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
@@ -29,6 +31,7 @@ html, body, [data-testid="stSidebar"], .stApp {
     direction: rtl !important;
 }
 
+/* بطاقات الموقف المالي الفاخرة ERP Cards */
 .kpi-container {
     display: flex;
     gap: 20px;
@@ -49,6 +52,7 @@ html, body, [data-testid="stSidebar"], .stApp {
 .kpi-card h2 { margin: 0 !important; font-size: 24px !important; font-weight: 700 !important; color: #1e4620 !important; }
 .kpi-card p { margin: 5px 0 0 0 !important; font-size: 12px !important; color: #95a5a6 !important; }
 
+/* 📊 هندسة الجداول الجمركية الحقيقية المستقرة RTL على الشاشة */
 .enterprise-table-container {
     width: 100%;
     overflow-x: auto;
@@ -103,10 +107,14 @@ div.stButton > button:hover { background-color: #2e7d32 !important; }
 .status-red { background-color: #ffebee; color: #c62828; }
 .status-orange { background-color: #fff3e0; color: #ef6c00; }
 
-/* 📜 حزمة العزل الكلي للطباعة */
+/* ==============================================================================
+ * 📜 حزمة العزل الكلي للطباعة (Enterprise Multi-Page Printing Architecture)
+ * حسم المشكلة الموضحة في image_89d095 لمنع تداخل أو حجب الصفحات تماماً
+ * ============================================================================== */
 .official-print-document { display: none; }
 
 @media print {
+    /* 1. إخفاء واجهة الموقع بالكامل من جذورها صوناً لنقاء الورقة المطبوعة */
     header, footer, [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stElementToolbar"],
     div.stButton, div.stForm, div.stSelectbox, div.stMultiSelect, div.stRadio, .stExpander, .print-instruction,
     .enterprise-table-container, .analytics-container, .no-print, [data-testid="stSidebarUserContent"],
@@ -117,9 +125,11 @@ div.stButton > button:hover { background-color: #2e7d32 !important; }
         margin: 0 !important;
     }
     
+    /* نسف الهياكل الفارغة لصفوف ستريمليت لمنع تداخل وتقطيع الصفحات الجارية */
     div[data-testid="stVerticalBlock"] > div { display: none !important; }
     div[data-testid="stVerticalBlock"] > div:has(.official-print-document) { display: block !important; }
 
+    /* 2. تحرير الحاويات لتنساب طولياً عبر صفحات متعددة دون نقصان */
     [data-testid="stAppViewContainer"], .main, .block-container, [data-testid="stVerticalBlock"] {
         padding: 0 !important;
         margin: 0 !important;
@@ -131,6 +141,7 @@ div.stButton > button:hover { background-color: #2e7d32 !important; }
         background-color: #ffffff !important;
     }
 
+    /* 3. العرض الرسمي الفاخر للوثيقة بالهوامش الجمركية النظيفة */
     .official-print-document {
         display: block !important;
         background-color: #ffffff !important;
@@ -155,6 +166,7 @@ div.stButton > button:hover { background-color: #2e7d32 !important; }
 </style>
 """, unsafe_allow_html=True)
 
+# الاتصال بقاعدة البيانات السحابية
 def get_db_connection():
     try:
         db_url = st.secrets["postgres"]["url"]
@@ -256,6 +268,11 @@ if menu == "📊 لوحة التحكم والتقارير":
                 req_l, req_u = shipments_all['do_value_lyd'].sum(), shipments_all['final_freight_usd'].sum()
                 paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum()
                 paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum()
+                
+                fig = go.Figure()
+                fig.add_trace(go.Bar(x=df_export_target['customer_name'], y=df_export_target['remaining_lyd'], name='المتبقي (دينار د.ل)', marker_color='#1e4620'))
+                fig.update_layout(title='📈 ميزان الأرصاد المعلقة والذمم المالية الجارية للزبائن أونلاين', template='plotly_white', font=dict(family="Cairo"))
+                st.plotly_chart(fig, use_container_width=True)
             else:
                 st.subheader("📋 كشف السجل التفصيلي الشامل")
                 df_export_target = shipments_all.copy()
@@ -282,10 +299,11 @@ if menu == "📊 لوحة التحكم والتقارير":
                 render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
 
         if not df_export_target.empty:
+            st.write("")
             st.download_button(label="📥 تحميل كشف الحساب النشط حالياً بصيغة Excel معتمد", data=to_excel(df_export_target), file_name="istabraq_statement.xlsx")
 
         st.write("---")
-        st.markdown("### 🖨️ وثيقة تصديق ومطابقة كشوفات الحساب الرسمية للطباعة:")
+        st.markdown("### 🖨️ وثيقة تصديق ومطابقة كشوفات الحساب الرسمية للطباعة المعزولة:")
         if st.button("🖨️ تأكيد معالجة وتوليد وثيقة كشف الحساب للطباعة الفورية"):
             rows_html_p = ""
             if report_structure == "كشف مالي إجمالي عام" and report_scope == "كل زبائن المنظومة":
@@ -408,7 +426,7 @@ elif menu == "✏️ تعديل وحذف الإيصالات":
                 with b1:
                     if st.form_submit_button("💾 حفظ التعديل"):
                         cursor.execute('UPDATE receipts SET amount=%s, currency=%s, receipt_date=%s, notes=%s WHERE id=%s', (edit_r_amount, edit_r_curr, edit_r_date, edit_r_notes, receipt_id))
-                        conn.commit(); st.success("تم تحديث بيانات الإيصال!"); st.sidebar.markdown("🔄 يرجى إعادة تحديث الصفحة"); st.rerun()
+                        conn.commit(); st.success("تم تحديث بيانات الإيصال!"); st.rerun()
                 with b2:
                     if st.form_submit_button("🗑️ حذف نهائي"):
                         cursor.execute("DELETE FROM receipts WHERE id=%s", (receipt_id,))
@@ -482,8 +500,7 @@ elif menu == "📥 رفع ملف إكسل":
                     new_do_num = str(row[col_donum]).strip()
                     new_do_val, new_agency, new_final = safe_float(row[col_dovald]), safe_float(row[col_agency]), safe_float(row[col_final])
                     raw_containers = str(row[col_cont]).strip()
-                    container_list = re.split(r'[,/؛;\s
-]+', raw_containers)
+                    container_list = re.split(r'[,/؛;\s\n]+', raw_containers)
                     container_list = [c.strip() for c in container_list if c.strip()]
                     if not container_list: container_list = [""]
                     for container in container_list:
@@ -497,10 +514,10 @@ elif menu == "📥 رفع ملف إكسل":
                             insert_count += 1
                 conn.commit(); cursor.close(); conn.close()
                 st.success(f"🎉 تكللت العملية بالنجاح!")
-        except Exception as e: st.error(f"حدث خطأ أثناء معالجة ملف الإكسل: {e}")
+        except Exception as e: st.error(f"حدث خطأ أثناء معالجة الملف: {e}")
 
 elif menu == "👥 إدارة الزبائن":
-    st.title("👥 التحكم الكامل في أسماء قائمة العملاء")
+    st.title("👥 التحكم الكامل في قائمة الزبائن")
     conn = get_db_connection()
     cursor = conn.cursor()
     tab1, tab2, tab3 = st.tabs(["➕ إضافة زبون جديد", "✏️ تعديل اسم زبون", "❌ حذف زبون"])
@@ -511,20 +528,20 @@ elif menu == "👥 إدارة الزبائن":
                 try:
                     cursor.execute("INSERT INTO customers (name) VALUES (%s)", (new_cust.strip(),))
                     conn.commit(); st.success("تم الإضافة بنجاح!"); st.rerun()
-                except: st.error("هذا العميل مسجل بالسيستم بالفعل!")
+                except: st.error("هذا الزبون مسجل بالفعل!")
     with tab2:
         customers = pd.read_sql_query("SELECT * FROM customers", conn)
         if not customers.empty:
             cust_to_edit = st.selectbox("اختر الزبون لتعديل اسمه:", customers['name'])
-            new_name = st.text_input("الاسم الجديد المعدل الصريح:")
+            new_name = st.text_input("الاسم الجديد المعدل:")
             if st.button("تأكيد تعديل الاسم"):
                 if new_name.strip():
                     cursor.execute("UPDATE customers SET name = %s WHERE name = %s", (new_name.strip(), cust_to_edit))
                     cursor.execute("UPDATE shipments SET customer_name = %s WHERE customer_name = %s", (new_name.strip(), cust_to_edit))
-                    conn.commit(); st.success("تم التعديل ومزامنة حساب العميل بنجاح!"); st.rerun()
+                    conn.commit(); st.success("تم التعديل بنجاح!"); st.rerun()
     with tab3:
         if not customers.empty:
-            cust_to_del = st.selectbox("اختر الزبون المراد مسحه تماماً بكل سجلاته الحالية:", customers['name'])
+            cust_to_del = st.selectbox("اختر الزبون المراد مسحه تماماً:", customers['name'])
             if st.button("موافق، حذف نهائي"):
                 cursor.execute("DELETE FROM customers WHERE name = %s", (cust_to_del,))
                 cursor.execute("DELETE FROM shipments WHERE customer_name = %s", (cust_to_del,))
@@ -532,11 +549,11 @@ elif menu == "👥 إدارة الزبائن":
     cursor.close(); conn.close()
 
 elif menu == "📝 تعديل وحذف الشحنات":
-    st.title("📝 محرك البحث المتقدم والتحكم الفردي الصارم بالشحنات")
+    st.title("📝 محرك البحث المتقدم والتحكم الفردي في الشحنات")
     conn = get_db_connection()
     cursor = conn.cursor()
     shipments = pd.read_sql_query("SELECT * FROM shipments ORDER BY id DESC", conn)
-    if shipments.empty: st.info("لا يوجد شحنات جارية مسجلة بالمنظومة حالياً.")
+    if shipments.empty: st.info("لا توجد حاويات مسجلة حالياً.")
     else:
         search_query = st.text_input("🔍 صندوق البحث الذكي:")
         filtered_df = shipments.copy()
@@ -546,7 +563,7 @@ elif menu == "📝 تعديل وحذف الشحنات":
         if filtered_df.empty: st.warning("لم يتم العثور على أي نتائج.")
         else:
             filtered_df['selector_text'] = "بوليصة: " + filtered_df['bl_number'].astype(str) + " | حاوية: " + filtered_df['container_number'].astype(str) + " (" + filtered_df['customer_name'] + ")"
-            selected_option = st.selectbox("اختر السجل الدقيق المعني بإجراء المعالجة والتحديث السحابي:", filtered_df['selector_text'].tolist())
+            selected_option = st.selectbox("اختر الشحنة الدقيقة المستهدفة بالتحديث أو الإزالة:", filtered_df['selector_text'].tolist())
             selected_row = filtered_df[filtered_df['selector_text'] == selected_option].iloc[0]
             shipment_id = int(selected_row['id'])
             with st.form("edit_ship_form_v2"):
@@ -589,9 +606,9 @@ elif menu == "🗑️ مسح البيانات دفعة واحدة":
                 shipment_options = {f"📦 حاوية: {r['container_number']} | بوليصة: {r['bl_number']}": r['id'] for r in cust_shipments}
                 select_all = st.checkbox("🔄 تحديد وتظليل كافة حاويات هذا الحساب المسجلة")
                 default_selection = list(shipment_options.keys()) if select_all else []
-                selected_labels = st.multiselect("اختر الشحنات المستهدفة بالإزالة الفورية:", options=list(shipment_options.keys()), default=default_selection)
+                selected_labels = st.multiselect("اختر الشحنات المستهدفة بالشطب والإزالة:", options=list(shipment_options.keys()), default=default_selection)
                 if selected_labels:
-                    confirm_word = st.text_input("لتنفيذ الشطب، اكتب كلمة 'حذف' صراحة في الفراغ:")
+                    confirm_word = st.text_input("لتنفيذ الشطب, اكتب كلمة 'حذف' صراحة في الفراغ:")
                     if st.button("🗑️ تنفيذ حذف الحاويات المحددة"):
                         if confirm_word == "حذف":
                             ids_to_delete = [shipment_options[lbl] for lbl in selected_labels]
