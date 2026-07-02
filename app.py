@@ -222,7 +222,7 @@ def parse_any_date(date_val):
     return date_str
 
 def to_excel(df):
-    """تصدير وتحويل مخرجات كشوف الحساب النشطة حالياً إلى ملف إكسل رسمي"""
+    """تصدير وتحويل مخرجات كشوف الحساب النشطة حالياً إلى ملف مالي آمن مع معالج بدائل مرن لتجنب أخطاء حزم النظام"""
     output = io.BytesIO()
     clean_df = df.copy()
     
@@ -247,14 +247,25 @@ def to_excel(df):
     }
     clean_df.rename(columns=translation_dict, errors='ignore', inplace=True)
     
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        clean_df.to_excel(writer, index=False, sheet_name='كشف الحساب الرسمي')
-        workbook  = writer.book
-        worksheet = writer.sheets['كشف الحساب الرسمي']
-        # ضبط محاذاة البيانات لتكون من اليمين إلى اليسار تلقائياً
-        worksheet.right_to_left()
-        
-    return output.getvalue()
+    # محاولة أولى: استخدام محرك xlsxwriter
+    try:
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            clean_df.to_excel(writer, index=False, sheet_name='كشف الحساب الرسمي')
+            workbook  = writer.book
+            worksheet = writer.sheets['كشف الحساب الرسمي']
+            # ضبط محاذاة البيانات لتكون من اليمين إلى اليسار تلقائياً
+            worksheet.right_to_left()
+        return output.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"
+    except (ModuleNotFoundError, Exception):
+        # محاولة ثانية بديلة: استخدام محرك openpyxl المدمج
+        try:
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                clean_df.to_excel(writer, index=False, sheet_name='كشف الحساب الرسمي')
+            return output.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"
+        except (ModuleNotFoundError, Exception):
+            # المحاولة الاحتياطية المطلقة: التصدير كـ CSV معالج لترميز Excel والعربية (تجنب الانهيار تماماً)
+            csv_data = clean_df.to_csv(index=False, encoding='utf-8-sig')
+            return csv_data.encode('utf-8-sig'), "text/csv", "csv"
 
 # ==============================================================================
 # 4. إدارة الاتصال بقاعدة البيانات السحابية مع نظام المحاكاة الاحتياطي المستقر
@@ -654,14 +665,16 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     df_export_target = df_cust_s.copy()
                     render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
 
-            # تفعيل وتصحيح معالجة التصدير التلقائية
+            # تفعيل وتصحيح معالجة التصدير التلقائية مع محاذاة آمنة للبيانات واللاحقة المتوقعة
             if not df_export_target.empty:
                 st.write("")
+                # جلب البيانات والترميز المناسب وفقاً للبيئة النشطة
+                file_data, mime_type, file_ext = to_excel(df_export_target)
                 st.download_button(
-                    label="📥 تحميل كشف الحساب النشط حالياً بصيغة Excel معتمد للشركة", 
-                    data=to_excel(df_export_target), 
-                    file_name=f"istabraq_statement_{target_customer.replace(' ', '_')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    label=f"📥 تحميل كشف الحساب النشط حالياً بصيغة {'Excel' if file_ext == 'xlsx' else 'CSV متوافق مع Excel'} معتمد للشركة", 
+                    data=file_data, 
+                    file_name=f"istabraq_statement_{target_customer.replace(' ', '_')}.{file_ext}",
+                    mime=mime_type
                 )
 
                 # --- وثيقة تصديق الطباعة المعزولة تماماً والخالية من الفراغات لورق A4 ---
