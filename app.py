@@ -7,7 +7,7 @@ import io
 import re
 
 # ==============================================================================
-# 1. إعداد الصفحة الأساسي بنسق عريض رصين ومتوافق مع الهوية البصرية لـ Apple
+# 1. إعداد الصفحة الأساسي بنسق عريض متناسق متكامل مع هوية آبل البصرية
 # ==============================================================================
 st.set_page_config(
     page_title="إستبرق الدولية - منظومة الرقابة المالية وإدارة الشحنات الموحدة",
@@ -16,13 +16,13 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# 2. حقن التنسيقات الفاخرة لتخصيص واجهة ستريمليت كلياً (Tailwind & Apple Inspired CSS)
+# 2. حقن التنسيقات الفاخرة المخصصة واجهات ستريمليت بالكامل (Premium CSS Styling)
 # ==============================================================================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
 
-/* إعادة صياغة الخطوط والاتجاهات الافتراضية بمفهوم آبل واللمسات البرونزية الفاخرة */
+/* إعادة صياغة الخطوط والاتجاهات بمفهوم آبل ولمسات البرونز الفخمة */
 html, body, [data-testid="stSidebar"], .stApp {
     font-family: 'Cairo', sans-serif;
     direction: rtl !important;
@@ -36,12 +36,18 @@ html, body, [data-testid="stSidebar"], .stApp {
     direction: rtl !important;
 }
 
-/* إخفاء عناصر ستريمليت الافتراضية غير الضرورية للمظهر الاحترافي للموقع */
+/* تخصيص مظهر الحقول المخصصة للإدخال لتتوافق مع اللغة العربية */
+input, textarea, select, .stSelectbox {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* إخفاء عناصر ستريمليت الافتراضية للارتقاء بواجهة المستخدم للمظهر التجاري */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 [data-testid="stHeader"] {background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid #e2e8f0;}
 
-/* تخصيص مظهر القائمة الجانبية الفاخرة - مستوحاة من التباين اللوني لـ portfolio34566.jpg */
+/* تخصيص مظهر القائمة الجانبية الفاخرة بالتدرج اللوني لشركة إستبرق */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #091e14 0%, #112a1f 100%) !important;
     border-left: 1px solid rgba(255, 255, 255, 0.05);
@@ -50,7 +56,7 @@ footer {visibility: hidden;}
     color: #f8fafc !important;
 }
 
-/* بطاقات الموقف المالي الراقية (Premium Responsive Glassmorphism Cards) */
+/* بطاقات الموقف المالي الراقية (Responsive Premium Cards) */
 .kpi-container {
     display: flex;
     gap: 18px;
@@ -93,7 +99,7 @@ footer {visibility: hidden;}
     color: #94a3b8 !important; 
 }
 
-/* تصميم الجداول الذكية المستقرة والراقية مع التوافقية الكاملة لشاشات الهاتف والكمبيوتر */
+/* تصميم الجداول الذكية المستقرة والراقية المتوافقة تماماً مع شاشات الجوال */
 .enterprise-table-container {
     width: 100%;
     overflow-x: auto;
@@ -132,7 +138,7 @@ table.corporate-data-table td {
 table.corporate-data-table tr:nth-child(even) { background-color: #f8fafc; }
 table.corporate-data-table tr:hover { background-color: #f1f5f9; }
 
-/* أزرار الإجراءات والتحكم بتصميم Apple الموحد وبلمسات ذهبية تفاعلية */
+/* أزرار الإجراءات والتحكم بتصميم Apple الراقي بلمسات ذهبية تفاعلية */
 div.stButton > button:first-child {
     background-color: #112a1f !important;
     color: #ffffff !important;
@@ -152,7 +158,7 @@ div.stButton > button:hover {
     box-shadow: 0 12px 30px rgba(17, 42, 31, 0.25) !important;
 }
 
-/* الشارات الملونة الحديثة للحالة جمركياً */
+/* شارات الحالة الملونة الحديثة */
 .status-badge { padding: 5px 12px; border-radius: 10px; font-size: 11.5px; font-weight: 800; display: inline-block; }
 .status-green { background-color: #d1fae5; color: #065f46; }
 .status-red { background-color: #fee2e2; color: #991b1b; }
@@ -180,7 +186,78 @@ div[data-testid="stTabBar"] button[aria-selected="true"] {
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 3. إدارة الاتصال الآمن والذكي بقاعدة البيانات السحابية مع نظام المحاكاة الاحتياطي
+# 3. الوظائف والمساعدات الحسابية والبرمجية الذكية (Smart General Helpers)
+# ==============================================================================
+def safe_float(val):
+    """تحويل القيم المدخلة إلى قيم عشرية بطريقة آمنة تتجنب الانهيار والأخطاء الكامنة"""
+    try:
+        if pd.isna(val) or val is None:
+            return 0.0
+        # معالجة النصوص المنظفة من العملات والرموز المزعجة
+        if isinstance(val, str):
+            val = val.replace('$', '').replace('د.ل', '').replace(',', '').strip()
+        return float(val)
+    except (ValueError, TypeError):
+        return 0.0
+
+def parse_any_date(date_val):
+    """دالة ذكية لقراءة التواريخ وصياغتها بنسق موحد YYYY-MM-DD لمطابقة المدخلات العشوائية"""
+    if pd.isna(date_val) or date_val is None or str(date_val).strip() == "":
+        return datetime.now().strftime('%Y-%m-%d')
+    if isinstance(date_val, datetime):
+        return date_val.strftime('%Y-%m-%d')
+    if hasattr(date_val, 'strftime'):
+        return date_val.strftime('%Y-%m-%d')
+    
+    date_str = str(date_val).strip()
+    # تجربة صيغ التحليل والتحويل الممكنة
+    formats = ['%Y-%m-%d', '%d/%m/%Y', '%Y/%m/%d', '%d-%m-%Y', '%Y-%m-%d %H:%M:%S']
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_str, fmt).strftime('%Y-%m-%d')
+        except ValueError:
+            continue
+            
+    # إذا تعذر تحليلها بالكامل، يتم تنظيف الصيغة أو إرجاع التاريخ الحالي كخيار افتراضي آمن
+    return date_str
+
+def to_excel(df):
+    """تصدير وتحويل مخرجات كشوف الحساب النشطة حالياً إلى ملف إكسل رسمي"""
+    output = io.BytesIO()
+    clean_df = df.copy()
+    
+    # استبعاد الأعمدة البرمجية الداخلية والتقنية قبل عملية التصدير للزبون
+    internal_cols = ['selector_label', 'selector_text', 'profit_usd', 'id']
+    clean_df.drop(columns=[col for col in internal_cols if col in clean_df.columns], errors='ignore', inplace=True)
+    
+    # إعادة تسمية الأعمدة للمسميات الرسمية الفاخرة
+    translation_dict = {
+        'customer_name': 'اسم الزبون',
+        'container_number': 'رقم الحاوية',
+        'bl_number': 'رقم البوليصة',
+        'shipment_date': 'التاريخ',
+        'do_number': 'رقم إذن التسليم DO',
+        'do_value_lyd': 'قيمة أمر التسليم (د.ل)',
+        'agency_freight_usd': 'شحن الوكالة ($)',
+        'final_freight_usd': 'الشحن النهائي للزبون ($)',
+        'amount': 'المبلغ المقبوض',
+        'currency': 'العملة',
+        'receipt_date': 'تاريخ السند',
+        'notes': 'ملاحظات السند'
+    }
+    clean_df.rename(columns=translation_dict, errors='ignore', inplace=True)
+    
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        clean_df.to_excel(writer, index=False, sheet_name='كشف الحساب الرسمي')
+        workbook  = writer.book
+        worksheet = writer.sheets['كشف الحساب الرسمي']
+        # ضبط محاذاة البيانات لتكون من اليمين إلى اليسار تلقائياً
+        worksheet.right_to_left()
+        
+    return output.getvalue()
+
+# ==============================================================================
+# 4. إدارة الاتصال بقاعدة البيانات السحابية مع نظام المحاكاة الاحتياطي المستقر
 # ==============================================================================
 def get_db_connection():
     if "postgres" not in st.secrets:
@@ -247,6 +324,7 @@ def init_db():
     finally:
         conn.close()
 
+# تهيئة قاعدة البيانات مباشرة مع إقلاع المنظومة
 init_db()
 
 # ==============================================================================
@@ -255,12 +333,17 @@ init_db()
 def db_query(query, params=None, fetch=True):
     conn = get_db_connection()
     if conn is None:
+        # توجيه الاستعلام تلقائياً إلى قاعدة البيانات المحلية في حالة غياب الاتصال السحابي
         if "SELECT * FROM customers" in query:
             return st.session_state["mock_db"]["customers"]
         elif "SELECT * FROM shipments" in query:
             return st.session_state["mock_db"]["shipments"]
         elif "SELECT * FROM receipts" in query:
             return st.session_state["mock_db"]["receipts"]
+        elif "SELECT id FROM shipments" in query and params:
+            # معالج التحقق من وجود الحاوية لمنع التكرار جراء الاستيراد المجمع
+            container, bl = params[0], params[1]
+            return [s for s in st.session_state["mock_db"]["shipments"] if s["container_number"] == container and s["bl_number"] == bl]
         return []
     
     try:
@@ -272,7 +355,7 @@ def db_query(query, params=None, fetch=True):
             conn.commit()
             return True
     except Exception as e:
-        st.error(f"خطأ سحابي: {e}")
+        st.error(f"❌ خطأ في الاستعلام السحابي: {e}")
         return []
     finally:
         conn.close()
@@ -280,9 +363,12 @@ def db_query(query, params=None, fetch=True):
 def db_execute(query, params=None):
     conn = get_db_connection()
     if conn is None:
+        # معالجة حركات الإدخال والتعديل والحذف يدوياً داخل هيكل المحاكاة
         if "INSERT INTO customers" in query:
             new_id = len(st.session_state["mock_db"]["customers"]) + 1
-            st.session_state["mock_db"]["customers"].append({"id": new_id, "name": params[0]})
+            # التحقق من عدم التكرار
+            if not any(c['name'] == params[0] for c in st.session_state["mock_db"]["customers"]):
+                st.session_state["mock_db"]["customers"].append({"id": new_id, "name": params[0]})
         elif "INSERT INTO shipments" in query:
             new_id = len(st.session_state["mock_db"]["shipments"]) + 1
             st.session_state["mock_db"]["shipments"].insert(0, {
@@ -306,6 +392,13 @@ def db_execute(query, params=None):
                     s["do_value_lyd"] = params[4]
                     s["agency_freight_usd"] = params[5]
                     s["final_freight_usd"] = params[6]
+        elif "UPDATE receipts SET" in query:
+            for r in st.session_state["mock_db"]["receipts"]:
+                if r["id"] == params[-1]:
+                    r["amount"] = params[0]
+                    r["currency"] = params[1]
+                    r["receipt_date"] = params[2]
+                    r["notes"] = params[3]
         elif "UPDATE customers" in query:
             for c in st.session_state["mock_db"]["customers"]:
                 if c["name"] == params[1]: c["name"] = params[0]
@@ -334,13 +427,13 @@ def db_execute(query, params=None):
             conn.commit()
             return True
     except Exception as e:
-        st.error(f"خطأ في تنفيذ الإجراء السحابي: {e}")
+        st.error(f"❌ خطأ في تنفيذ الإجراء السحابي: {e}")
         return False
     finally:
         conn.close()
 
 # ==============================================================================
-# 6. الوظائف المساعدة العامة والعمليات الحسابية الآمنة
+# 6. بناء وتصميم واجهة شبكة العرض الفاخرة للبيانات (Data Grid Layout)
 # ==============================================================================
 def render_premium_html_grid(df, show_internal_profit=False):
     headers = [
@@ -439,7 +532,7 @@ if menu == "📊 الإدارة والتقرير المالي العام":
     shipments_all = pd.DataFrame(shipments_list) if shipments_list else pd.DataFrame(columns=['id', 'customer_name', 'container_number', 'bl_number', 'shipment_date', 'do_number', 'do_value_lyd', 'agency_freight_usd', 'final_freight_usd'])
     receipts_all = pd.DataFrame(receipts_list) if receipts_list else pd.DataFrame(columns=['id', 'customer_name', 'amount', 'currency', 'receipt_date', 'notes'])
 
-    # التهيئة المسبقة والآمنة لمتغير التصدير تلافياً لخطأ NameError المذكور في صورة image_961242.png
+    # التهيئة المسبقة والآمنة لمتغير التصدير تلافياً لأخطاء المحاذاة البرمجية
     df_export_target = pd.DataFrame()
     target_customer = "الكل"
 
@@ -561,7 +654,7 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     df_export_target = df_cust_s.copy()
                     render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
 
-            # تحريك وتأمين المحاذاة لكتلة زر التصدير والتحميل والطباعة (آمنة تماماً تلافياً للـ NameError)
+            # تفعيل وتصحيح معالجة التصدير التلقائية
             if not df_export_target.empty:
                 st.write("")
                 st.download_button(
@@ -626,74 +719,68 @@ if menu == "📊 الإدارة والتقرير المالي العام":
                     </tbody>
                 </table>"""
 
-                print_html_content = f"""
-                <html>
-                <head>
-                    <title>طباعة كشف الحساب الرسمي - إستبرق الدولية</title>
-                    <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap');
-                        body {{ font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; padding: 20px; color: #000; }}
-                        .header {{ text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 25px; }}
-                        .header h1 {{ font-size: 22px; margin: 0; font-weight: 800; }}
-                        .header p {{ font-size: 13px; margin: 5px 0 0 0; font-weight: 700; color: #334155; }}
-                        .meta-table {{ width: 100%; margin-bottom: 25px; font-size: 13px; font-weight: 700; }}
-                        .meta-table td {{ padding: 6px; }}
-                        .data-table {{ width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; }}
-                        .data-table th {{ background-color: #f1f5f9; border: 1px solid #000; padding: 10px; text-align: right; font-weight: 800; }}
-                        .data-table td {{ border: 1px solid #000; padding: 10px; font-weight: 700; }}
-                        .print-totals-table {{ width: 100%; border-collapse: collapse; margin-top: 25px; }}
-                        .print-totals-table th {{ background-color: #f1f5f9; border: 1px solid #000; padding: 10px; text-align: center; font-weight: 800; }}
-                        .print-totals-table td {{ border: 1px solid #000; padding: 10px; text-align: center; font-weight: bold; }}
-                        .signatures {{ margin-top: 60px; display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; }}
-                    </style>
-                </head>
-                <body onload='window.print()'>
-                    <div class='header'>
-                        <h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1>
-                        <p>مصراتة - ليبيا | الهاتف: 0912185571 - 0912185571 - 0912185569 | الحسابات المركزية المعتمدة</p>
-                    </div>
-                    <table class='meta-table'>
-                        <tr>
-                            <td><b>مسمى كشف الحساب:</b> {target_customer if report_scope == 'زبون محدد فردي' else 'كافة عملاء المنظومة'}</td>
-                            <td style='text-align: left;'><b>تاريخ وتوقيت الطباعة:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</td>
-                        </tr>
-                        <tr>
-                            <td><b>نوع وثيقة كشف الموقف المالي:</b> {doc_type_text}</td>
-                            <td style='text-align: left;'><b>حصر القيود المدرجة:</b> {len(df_export_target)} سجل فعال جاري</td>
-                        </tr>
-                    </table>
-                    <table class='data-table'>
-                        <thead><tr>{table_headers}</tr></thead>
-                        <tbody>{rows_html_p}</tbody>
-                    </table>
-                    {summary_table_html}
-                    <div class='signatures'>
-                        <div>توقيع واعتماد الحسابات المركزية: .........................</div>
-                        <div>خِتم وتصديق إدارة الشركة رسميًا: .........................</div>
-                    </div>
-                </body>
-                </html>
-                """.replace("\n", " ").replace("'", "\\'")
-
-                st.components.v1.html(f"""
-                    <button onclick="
-                        var win = window.open('', '_blank');
-                        win.document.write('{print_html_content}');
-                        win.document.close();
-                    " style="
-                        background-color: #112a1f;
-                        color: white;
-                        border: none;
-                        padding: 14px 28px;
-                        font-size: 15px;
-                        font-weight: bold;
-                        border-radius: 12px;
-                        cursor: pointer;
-                        width: 100%;
-                        font-family: 'Cairo', sans-serif;
-                        box-shadow: 0 4px 12px rgba(17, 42, 31, 0.15);
-                    ">🖨️ تشغيل معالج طباعة كشف الحساب المعزول الفاخر (A4 Clean Print)</button>
-                """, height=70)
+                # بناء نسخة طباعة معزولة تتجاوز عقبات Popups بالمتصفحات
+                st.write("")
+                st.info("ℹ️ اضغط على الزر أدناه لفتح واجهة الطباعة المتوافقة مع طابعات A4.")
+                st.download_button(
+                    label="🖨️ تحميل نسخة ملف الطباعة المباشرة بصيغة HTML المستقلة",
+                    data=f"""
+                    <!DOCTYPE html>
+                    <html dir="rtl" lang="ar">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>طباعة كشف الحساب الرسمي - إستبرق الدولية</title>
+                        <style>
+                            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap');
+                            body {{ font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; padding: 40px; color: #000; }}
+                            .header {{ text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 25px; }}
+                            .header h1 {{ font-size: 24px; margin: 0; font-weight: 800; }}
+                            .header p {{ font-size: 14px; margin: 6px 0 0 0; font-weight: 700; color: #334155; }}
+                            .meta-table {{ width: 100%; margin-bottom: 25px; font-size: 14px; font-weight: 700; border-collapse: collapse; }}
+                            .meta-table td {{ padding: 8px; }}
+                            .data-table {{ width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 15px; }}
+                            .data-table th {{ background-color: #f1f5f9; border: 1px solid #000; padding: 12px; text-align: right; font-weight: 800; }}
+                            .data-table td {{ border: 1px solid #000; padding: 12px; font-weight: 700; }}
+                            .print-totals-table {{ width: 100%; border-collapse: collapse; margin-top: 30px; }}
+                            .print-totals-table th {{ background-color: #f1f5f9; border: 1px solid #000; padding: 12px; text-align: center; font-weight: 800; }}
+                            .print-totals-table td {{ border: 1px solid #000; padding: 12px; text-align: center; font-weight: bold; }}
+                            .signatures {{ margin-top: 80px; display: flex; justify-content: space-between; font-size: 14px; font-weight: 800; }}
+                            @media print {{
+                                body {{ padding: 20px; }}
+                                .no-print {{ display: none; }}
+                            }}
+                        </style>
+                    </head>
+                    <body onload="window.print()">
+                        <div class="header">
+                            <h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1>
+                            <p>مصراتة - ليبيا | الهاتف: 0912185571 - 0912185569 | الحسابات المركزية المعتمدة</p>
+                        </div>
+                        <table class="meta-table">
+                            <tr>
+                                <td><b>مسمى كشف الحساب:</b> {target_customer if report_scope == 'زبون محدد فردي' else 'كافة عملاء المنظومة'}</td>
+                                <td style="text-align: left;"><b>تاريخ وتوقيت الطباعة:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</td>
+                            </tr>
+                            <tr>
+                                <td><b>نوع وثيقة كشف الموقف المالي:</b> {doc_type_text}</td>
+                                <td style="text-align: left;"><b>حصر القيود المدرجة:</b> {len(df_export_target)} سجل فعال جاري</td>
+                            </tr>
+                        </table>
+                        <table class="data-table">
+                            <thead><tr>{table_headers}</tr></thead>
+                            <tbody>{rows_html_p}</tbody>
+                        </table>
+                        {summary_table_html}
+                        <div class="signatures">
+                            <div>توقيع واعتماد الحسابات المركزية: .........................</div>
+                            <div>خِتم وتصديق إدارة الشركة رسميًا: .........................</div>
+                        </div>
+                    </body>
+                    </html>
+                    """,
+                    file_name=f"print_statement_{datetime.now().strftime('%Y%m%d%H%M')}.html",
+                    mime="text/html"
+                )
 
     # --- علامة التبويب الثانية: محرك فحص وتدقيق البيانات الناقصة ---
     with tab_audit:
@@ -833,7 +920,6 @@ elif menu == "🚢 حركة الحاويات والشحنات":
     customers_list = db_query("SELECT * FROM customers ORDER BY name ASC")
     shipments_list = db_query("SELECT * FROM shipments ORDER BY id DESC")
     
-    # المعالجة الآمنة للـ DataFrames تلافياً لأخطاء التهيئة الأولية
     customers_df = pd.DataFrame(customers_list) if customers_list else pd.DataFrame(columns=['id', 'name'])
     shipments = pd.DataFrame(shipments_list) if shipments_list else pd.DataFrame(columns=['id', 'customer_name', 'container_number', 'bl_number', 'shipment_date', 'do_number', 'do_value_lyd', 'agency_freight_usd', 'final_freight_usd'])
 
@@ -905,7 +991,7 @@ elif menu == "🚢 حركة الحاويات والشحنات":
                 with c1: 
                     col_cust = st.selectbox("عمود اسم الزبون الفعلي", all_cols, index=0)
                 with c2: 
-                    col_cont = st.selectbox("عمود رقم الحاوية (يقبل حاويات مدمجة بالخلية)", all_cols, index=min(1, len(all_cols)-1))
+                    col_cont = st.selectbox("عمود رقم الحاوية", all_cols, index=min(1, len(all_cols)-1))
                 with c3: 
                     col_bl = st.selectbox("عمود رقم البوليصة الجمركي", all_cols, index=min(2, len(all_cols)-1))
                 with c4: 
@@ -927,21 +1013,21 @@ elif menu == "🚢 حركة الحاويات والشحنات":
                 if st.button("🚀 بدء دمج البيانات والمطابقة الذكية بقاعدة البيانات أونلاين"):
                     insert_count, update_count = 0, 0
                     for index, row in df.iterrows():
-                        cust_name = str(row[col_cust]).strip()
-                        if cust_name == "" or pd.isnull(row[col_cust]): 
+                        cust_name = str(row[col_cust]).strip() if not pd.isnull(row[col_cust]) else ""
+                        if cust_name == "": 
                             continue
                         db_execute("INSERT INTO customers (name) VALUES (%s) ON CONFLICT (name) DO NOTHING", (cust_name,))
                         
-                        bl = str(row[col_bl]).strip().upper()
+                        bl = str(row[col_bl]).strip().upper() if not pd.isnull(row[col_bl]) else ""
                         raw_date = row[col_date]
                         date_str = parse_any_date(raw_date)
                         
-                        new_do_num = str(row[col_donum]).strip()
+                        new_do_num = str(row[col_donum]).strip() if not pd.isnull(row[col_donum]) else ""
                         new_do_val = safe_float(row[col_dovald])
                         new_agency = safe_float(row[col_agency])
                         new_final = safe_float(row[col_final])
                         
-                        raw_containers = str(row[col_cont]).strip()
+                        raw_containers = str(row[col_cont]).strip() if not pd.isnull(row[col_cont]) else ""
                         container_list = re.split(r'[,/؛;\s\n]+', raw_containers)
                         container_list = [c.strip().upper() for c in container_list if c.strip()]
                         if not container_list: 
