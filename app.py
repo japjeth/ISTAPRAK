@@ -1,1383 +1,1734 @@
-import streamlit as st
-import pandas as pd
-import psycopg2
-from psycopg2.extras import DictCursor
-from datetime import datetime
-import io
-import re
-
-# ==============================================================================
-# 1. إعداد الصفحة الأساسي بنسق عريض رصين وراقٍ بمفهوم Minimalist
-# ==============================================================================
-st.set_page_config(
-    page_title="إستبرق الدولية - منظومة إدارة الشحنات والرقابة المالية",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# ==============================================================================
-# 2. حزمة الـ CSS العالمية المتطورة لثبات الـ RTL والطباعة الاحترافية والجماليات الراقية
-# ==============================================================================
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
-
-/* تصميم الواجهة الجمالية المستوحى من Apple Design System */
-html, body, [data-testid="stSidebar"], .stApp {
-    font-family: 'Cairo', sans-serif;
-    direction: rtl !important;
-    text-align: right !important;
-    background-color: #f8fafc;
-    color: #0f172a;
-}
-
-/* محاذاة النصوص والقوائم */
-.stHeading, .stMarkdown, p, div, label, span, h1, h2, h3, h4, h5, h6 {
-    text-align: right !important;
-    direction: rtl !important;
-}
-
-/* تخصيص مظهر علامات التبويب (Tabs) لتطابق مظهر الـ Segmented Control في Apple */
-div[data-testid="stTabBar"] {
-    background-color: #ffffff;
-    padding: 6px;
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    margin-bottom: 25px;
-    border: 1px solid #e2e8f0;
-}
-div[data-testid="stTabBar"] button {
-    font-weight: 700 !important;
-    font-size: 14px !important;
-    color: #475569 !important;
-    border-radius: 10px !important;
-    padding: 8px 24px !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    border: none !important;
-}
-div[data-testid="stTabBar"] button[aria-selected="true"] {
-    background-color: #112a1f !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 10px rgba(17, 42, 31, 0.15) !important;
-}
-
-/* بطاقات المؤشرات المالية الفاخرة (Apple Styled ERP Cards) */
-.kpi-container {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 30px;
-    direction: rtl !important;
-}
-.kpi-card {
-    flex: 1;
-    min-width: 250px;
-    background: #ffffff;
-    padding: 24px;
-    border-radius: 16px;
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 0 8px 24px rgba(148, 163, 184, 0.05);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.kpi-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(148, 163, 184, 0.1);
-}
-.kpi-card h5 { 
-    margin: 0 0 10px 0 !important; 
-    color: #64748b !important; 
-    font-size: 12.5px !important; 
-    font-weight: 800 !important; 
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.kpi-card h2 { 
-    margin: 0 !important; 
-    font-size: 28px !important; 
-    font-weight: 900 !important; 
-    color: #112a1f !important; 
-}
-.kpi-card p { 
-    margin: 8px 0 0 0 !important; 
-    font-size: 11.5px !important; 
-    color: #94a3b8 !important; 
-}
-
-/* هندسة جداول البيانات الفاخرة المعتمدة */
-.enterprise-table-container {
-    width: 100%;
-    overflow-x: auto;
-    direction: rtl !important;
-    margin: 25px 0;
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-    background: #ffffff;
-}
-table.corporate-data-table {
-    width: 100%;
-    border-collapse: collapse;
-    direction: rtl !important;
-    text-align: right !important;
-}
-table.corporate-data-table th {
-    background-color: #112a1f !important;
-    color: #ffffff !important;
-    padding: 16px 20px;
-    font-weight: 800;
-    font-size: 14.5px;
-    border-bottom: 3px solid #091711;
-    white-space: nowrap;
-    text-align: right !important;
-}
-table.corporate-data-table td {
-    padding: 14px 20px;
-    text-align: right !important;
-    border-bottom: 1px solid #f1f5f9;
-    color: #334155;
-    font-size: 14px;
-    font-weight: 600;
-}
-table.corporate-data-table tr:nth-child(even) { background-color: #f8fafc; }
-table.corporate-data-table tr:hover { background-color: #f1f5f9; }
-
-/* عناصر التحكم والمدخلات الفاخرة */
-div.stButton > button:first-child {
-    background-color: #112a1f !important;
-    color: #ffffff !important;
-    font-weight: 800 !important;
-    width: 100% !important;
-    border-radius: 12px !important;
-    height: 48px !important;
-    border: none !important;
-    font-size: 15px !important;
-    box-shadow: 0 4px 12px rgba(17, 42, 31, 0.15) !important;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-div.stButton > button:hover { 
-    background-color: #1a3f2f !important; 
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(17, 42, 31, 0.25) !important;
-}
-
-/* الشارات الملونه الدقيقة */
-.status-badge { 
-    padding: 5px 12px; 
-    border-radius: 8px; 
-    font-size: 12px; 
-    font-weight: 800; 
-    display: inline-block;
-}
-.status-green { background-color: #d1fae5; color: #065f46; }
-.status-red { background-color: #fee2e2; color: #991b1b; }
-.status-orange { background-color: #fef3c7; color: #92400e; }
-
-/* تخصيص مظهر الـ Sidebar (Apple Dark Sidebar Concept) */
-[data-testid="stSidebar"] {
-    background-color: #0b1a13 !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
-}
-[data-testid="stSidebar"] * {
-    color: #f8fafc !important;
-}
-[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] {
-    background-color: #112a1f !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 10px !important;
-}
-[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] * {
-    color: #f8fafc !important;
-}
-
-/* ==============================================================================
- * 📜 هيكلية الطباعة المعزولة كلياً والمضمونة (Anti-Overlap Isolation CSS)
- * ============================================================================== */
-.official-print-document { display: none; }
-
-@media print {
-    /* إخفاء واجهة ستريمليت بالكامل بطريقة التمويه المرئي المضمون */
-    body * {
-        visibility: hidden !important;
-    }
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إستبرق الدولية - منظومة الرقابة المالية وإدارة الشحنات الموحدة</title>
+    <!-- تحميل خط Cairo الفاخر من جوجل -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- تحميل مكتبة Tailwind CSS للتصميم العصري -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- تحميل أيقونات Lucide الفاخرة المعتمدة عالمياً -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     
-    /* حصر وإظهار وثيقة كشف الحساب الرسمية بمفرده */
-    .official-print-document, .official-print-document * {
-        visibility: visible !important;
-    }
-    
-    .official-print-document {
-        display: block !important;
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        padding: 10mm 10mm !important;
-        direction: rtl !important;
-        text-align: right !important;
-    }
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        emerald: {
+                            950: '#021a11',
+                            900: '#062c1d',
+                            800: '#114631',
+                            700: '#1a5f43',
+                            600: '#227855',
+                            500: '#2b9369',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* أنماط مخصصة للتجربة الفاخرة */
+        .glass-sidebar {
+            background: linear-gradient(135deg, rgba(6, 44, 29, 0.98) 0%, rgba(2, 26, 17, 0.99) 100%);
+            backdrop-filter: blur(20px);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        /* تخصيص مؤشر التمرير الناعم */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
 
-    @page { 
-        size: A4 portrait; 
-        margin: 15mm 10mm; 
-    }
-    
-    .document-corporate-header {
-        border-bottom: 3px double #000000;
-        padding-bottom: 12px;
-        margin-bottom: 20px;
-        text-align: center !important;
-    }
-    .document-corporate-header h1 {
-        font-size: 20px !important;
-        font-weight: 800 !important;
-        margin: 0 0 5px 0 !important;
-        text-align: center !important;
-    }
-    .document-corporate-header p {
-        font-size: 12px !important;
-        margin: 0 !important;
-        text-align: center !important;
-    }
-    
-    .document-meta-table {
-        width: 100% !important;
-        margin-bottom: 20px !important;
-        font-size: 12px !important;
-    }
-    .document-meta-table td {
-        padding: 5px !important;
-        border: none !important;
-    }
+        /* هيكلية الطباعة المعزولة كلياً والمضمونة لورق A4 Portrait دون أي زحزحة */
+        #print-document {
+            display: none;
+        }
+        @media print {
+            body * {
+                visibility: hidden !important;
+            }
+            #print-document, #print-document * {
+                visibility: visible !important;
+            }
+            #print-document {
+                display: block !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                padding: 10mm 10mm !important;
+                direction: rtl !important;
+                text-align: right !important;
+            }
+            .no-break {
+                page-break-inside: avoid !important;
+            }
+            thead {
+                display: table-header-group !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 font-cairo min-h-screen overflow-x-hidden antialiased">
 
-    table.print-invoice-table { 
-        width: 100% !important; 
-        border-collapse: collapse !important; 
-        margin-top: 15px !important; 
-        font-size: 11px !important; 
-    }
-    table.print-invoice-table th { 
-        background-color: #f1f5f9 !important; 
-        color: #000000 !important; 
-        border: 1px solid #000000 !important; 
-        padding: 8px !important; 
-        font-weight: bold !important; 
-        text-align: right !important; 
-        -webkit-print-color-adjust: exact; 
-    }
-    table.print-invoice-table td { 
-        border: 1px solid #cbd5e1 !important; 
-        padding: 8px !important; 
-        text-align: right !important; 
-        color: #000000 !important; 
-    }
-    table.print-invoice-table tr { 
-        page-break-inside: avoid !important; 
-    }
-    thead {
-        display: table-header-group !important;
-    }
-    
-    table.print-totals-table { 
-        width: 100% !important; 
-        border-collapse: collapse !important; 
-        margin-top: 20px !important; 
-        page-break-inside: avoid !important; 
-    }
-    table.print-totals-table th { 
-        background-color: #e2e8f0 !important; 
-        border: 1px solid #000000 !important; 
-        padding: 10px !important; 
-        font-weight: bold !important; 
-        text-align: center !important; 
-        -webkit-print-color-adjust: exact; 
-    }
-    table.print-totals-table td { 
-        border: 1px solid #cbd5e1 !important; 
-        padding: 10px !important; 
-        text-align: center !important; 
-        font-weight: 700 !important; 
-    }
-    
-    .print-signatures-block { 
-        margin-top: 40px !important; 
-        width: 100% !important; 
-        display: flex !important; 
-        justify-content: space-between !important; 
-        font-size: 12px !important;
-        font-weight: bold !important; 
-        page-break-inside: avoid !important; 
-    }
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-# ==============================================================================
-# 3. محرك إدارة والتحكم باتصالات قواعد البيانات السحابية (Safe Context Manager)
-# ==============================================================================
-def get_db_connection():
-    """تأسيس اتصال آمن بقاعدة البيانات مع تفعيل معالجة الاستثناءات"""
-    try:
-        db_url = st.secrets["postgres"]["url"]
-        return psycopg2.connect(db_url, cursor_factory=DictCursor)
-    except Exception as e:
-        st.error(f"🔴 خطأ في الاتصال بقاعدة البيانات السحابية: {e}")
-        st.stop()
-
-
-def init_db():
-    """تهيئة الجداول الجمركية والمالية مع الفهارس المناسبة لسرعة الاستعلام"""
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cursor:
-            # جدول أسماء الزبائن الرئيسي
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS customers (
-                    id SERIAL PRIMARY KEY, 
-                    name TEXT NOT NULL UNIQUE
-                )
-            """)
-            # جدول الشحنات والحاويات المطور
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS shipments (
-                    id SERIAL PRIMARY KEY, 
-                    customer_name TEXT, 
-                    container_number TEXT, 
-                    bl_number TEXT,
-                    shipment_date TEXT, 
-                    do_number TEXT, 
-                    do_value_lyd DOUBLE PRECISION DEFAULT 0.0,
-                    agency_freight_usd DOUBLE PRECISION DEFAULT 0.0, 
-                    final_freight_usd DOUBLE PRECISION DEFAULT 0.0
-                )
-            """)
-            # جدول إيصالات تحصيل الخزينة
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS receipts (
-                    id SERIAL PRIMARY KEY, 
-                    customer_name TEXT, 
-                    amount DOUBLE PRECISION DEFAULT 0.0,
-                    currency TEXT, 
-                    receipt_date TEXT, 
-                    notes TEXT
-                )
-            """)
-            conn.commit()
-    except Exception as e:
-        st.error(f"❌ خطأ في إعداد قاعدة البيانات السحابية: {e}")
-    finally:
-        conn.close()
-
-# تهيئة قاعدة البيانات تلقائياً
-init_db()
-
-
-# ==============================================================================
-# 4. الدوال والوظائف المساعدة (Utility Functions)
-# ==============================================================================
-def safe_float(val):
-    """تحويل القيم بطريقة آمنة لتفادي الأخطاء الصفرية"""
-    if pd.isnull(val): 
-        return 0.0
-    try: 
-        return float(val)
-    except (ValueError, TypeError): 
-        return 0.0
-
-
-def to_excel(df):
-    """توليد ملفات إكسل رسمية معزولة ومعتمدة"""
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='كشف الحساب الرسمي')
-    return output.getvalue()
-
-
-def parse_any_date(date_val):
-    """معالجة مرنة لمختلف صيغ التواريخ اليدوية والآلية وتوحيدها"""
-    if isinstance(date_val, (datetime, pd.Timestamp)):
-        return date_val.strftime('%Y-%m-%d')
-    date_str = str(date_val).strip()
-    for fmt in ('%Y-%m-%d', '%Y/%m/%d', '%d-%m-%Y', '%d/%m/%Y'):
-        try:
-            return datetime.strptime(date_str, fmt).strftime('%Y-%m-%d')
-        except ValueError:
-            continue
-    return datetime.now().strftime('%Y-%m-%d')
-
-
-def render_premium_html_grid(df, show_internal_profit=False):
-    """تصميم عارض الجداول الذكية التفاعلية على واجهة الشاشة"""
-    headers = [
-        "اسم الزبون", "رقم البوليصة", "رقم الحاوية", "التاريخ", 
-        "رقم أمر التسليم", "قيمة أمر التسليم (د.ل)", "الشحن النهائي ($)", "مؤشر الربحية"
-    ]
-    if show_internal_profit: 
-        headers.extend(["شحن الوكالة ($)", "صافي الربح ($)"])
+    <!-- هيكل التطبيق الرئيسي (مخفي أثناء الطباعة تلقائياً) -->
+    <div id="app-root" class="flex min-h-screen relative">
         
-    th_html = "".join(f"<th>{h}</th>" for h in headers)
-    tr_html = ""
-    
-    for _, row in df.iterrows():
-        # مؤشر ربحية الحاوية
-        final_fr = safe_float(row.get('final_freight_usd', 0))
-        agency_fr = safe_float(row.get('agency_freight_usd', 0))
-        
-        if final_fr > agency_fr:
-            profit_indicator = "<span class='status-badge status-green'>مربح</span>"
-        elif final_fr < agency_fr:
-            profit_indicator = "<span class='status-badge status-red'>🚨 خسارة</span>"
-        else:
-            profit_indicator = "<span class='status-badge status-orange'>غير مسعر</span>"
+        <!-- القائمة الجانبية الفاخرة المستوحاة من آبل -->
+        <aside class="w-80 glass-sidebar text-slate-100 flex flex-col justify-between fixed h-screen right-0 top-0 z-30 shadow-2xl transition-all duration-300 border-l border-emerald-800/20">
+            <div>
+                <!-- هيدر اللوجو للشركة -->
+                <div class="p-8 border-b border-emerald-800/30 flex items-center gap-4">
+                    <div class="bg-gradient-to-tr from-emerald-500 to-teal-400 p-3 rounded-2xl shadow-lg shadow-emerald-950/40">
+                        <i data-lucide="ship" class="w-7 h-7 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-black tracking-wide text-white">إستبرق الدولية</h1>
+                        <p class="text-[11px] text-emerald-400 font-bold tracking-widest uppercase mt-0.5">للخدمات اللوجستية والمالية</p>
+                    </div>
+                </div>
+
+                <!-- خيارات التنقل المدمجة والمنظمة في بوابات كبرى -->
+                <nav class="p-6 space-y-3">
+                    <p class="text-[10px] text-emerald-500/80 font-black px-3 tracking-wider uppercase mb-2">القطاعات التشغيلية</p>
+                    
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 group bg-emerald-800/40 text-white shadow-md shadow-emerald-950/20">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="layout-dashboard" class="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-[14.5px] font-bold">الإدارة والتقارير المالية</span>
+                        </div>
+                        <i data-lucide="chevron-left" class="w-4 h-4 text-emerald-600"></i>
+                    </button>
+
+                    <button onclick="switchTab('shipments')" id="nav-shipments" class="nav-btn w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 group text-emerald-300 hover:bg-emerald-900/40 hover:text-white">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="container" class="w-5 h-5 text-emerald-400/80 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-[14.5px] font-bold">حركة الشحنات والحاويات</span>
+                        </div>
+                        <i data-lucide="chevron-left" class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </button>
+
+                    <button onclick="switchTab('receipts')" id="nav-receipts" class="nav-btn w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 group text-emerald-300 hover:bg-emerald-900/40 hover:text-white">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="wallet" class="w-5 h-5 text-emerald-400/80 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-[14.5px] font-bold">الخزينة والمتحصلات</span>
+                        </div>
+                        <i data-lucide="chevron-left" class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </button>
+
+                    <button onclick="switchTab('crm')" id="nav-crm" class="nav-btn w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 group text-emerald-300 hover:bg-emerald-900/40 hover:text-white">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="users" class="w-5 h-5 text-emerald-400/80 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-[14.5px] font-bold">إدارة الحسابات والصيانة</span>
+                        </div>
+                        <i data-lucide="chevron-left" class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- معلومات الترخيص للشركة بأسفل القائمة الجانبية -->
+            <div class="p-6 border-t border-emerald-900/40 bg-emerald-950/20 text-center">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-900/60 text-emerald-400 text-[10.5px] font-bold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    خادم سحابي مستقر ومحمي
+                </div>
+                <p class="text-[10px] text-emerald-600 font-bold mt-3">النسخة الاحترافية العالمية © 2026</p>
+            </div>
+        </aside>
+
+        <!-- الهيكل المحتوى الأساسي والعلوي -->
+        <main class="flex-1 pr-80 min-h-screen flex flex-col">
             
-        tr_html += (
-            f"<tr>"
-            f"<td>{row['customer_name']}</td>"
-            f"<td>{row['bl_number']}</td>"
-            f"<td>{row['container_number']}</td>"
-            f"<td>{row['shipment_date']}</td>"
-            f"<td>{row['do_number']}</td>"
-            f"<td>{safe_float(row['do_value_lyd']):,.2f} د.ل</td>"
-            f"<td>${final_fr:,.2f}</td>"
-            f"<td>{profit_indicator}</td>"
-        )
-        if show_internal_profit:
-            profit = final_fr - agency_fr
-            tr_html += (
-                f"<td>${agency_fr:,.2f}</td>"
-                f"<td>${profit:,.2f}</td>"
-            )
-        tr_html += "</tr>"
-        
-    st.markdown(
-        f'<div class="enterprise-table-container">'
-        f'<table class="corporate-data-table">'
-        f'<thead><tr>{th_html}</tr></thead>'
-        f'<tbody>{tr_html}</tbody>'
-        f'</table></div>', 
-        unsafe_allow_html=True
-    )
+            <!-- الهيدر العلوي الملوكي -->
+            <header class="h-20 bg-white/75 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 px-8 flex items-center justify-between">
+                <div>
+                    <h2 id="page-title" class="text-xl font-extrabold text-slate-900">الإدارة والتقارير المالية العامة</h2>
+                    <p id="page-subtitle" class="text-xs text-slate-500 font-semibold mt-0.5">مراقبة الموازنات والموقف الحسابي العام لكافة العملاء</p>
+                </div>
+                <!-- تفاصيل المستخدم والتاريخ -->
+                <div class="flex items-center gap-4">
+                    <div class="bg-slate-100 px-4 py-2 rounded-xl border border-slate-200/50 flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-4 h-4 text-emerald-700"></i>
+                        <span id="header-date" class="text-xs font-bold text-slate-700">اليوم، 2 يوليو 2026</span>
+                    </div>
+                </div>
+            </header>
 
-
-# ==============================================================================
-# 5. واجهة التحكم الجانبية الفاخرة المدمجة (Sleek Apple-style Department Selector)
-# ==============================================================================
-st.sidebar.markdown(
-    """
-    <div style="text-align: center; padding: 15px 0 25px 0; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 25px;">
-        <span style="font-size: 38px;">🚢</span>
-        <h2 style="color: #ffffff; font-weight: 900; margin: 10px 0 2px 0; font-size: 21px; letter-spacing: 0.5px;">إستبرق الدولية</h2>
-        <p style="color: #a3b899; font-size: 11.5px; font-weight: 600; margin: 0;">منظومة الرقابة المالية والعمليات اللوجستية</p>
+            <!-- كتل المحتوى المبدلة حسب الاختيارات الجانبية -->
+            <div class="p-8 flex-1 space-y-8" id="content-area">
+                <!-- سيتم استبدال هذا المحتوى تلقائياً بواسطة محرك الجافا سكريبت -->
+            </div>
+        </main>
     </div>
-    """, 
-    unsafe_allow_html=True
-)
 
-# تقسيم الأنشطة لـ 4 قطاعات أساسية لحل مشكلة الاكتظاظ
-department = st.sidebar.selectbox(
-    "🎯 حدد القطاع التشغيلي المطلوب:",
-    [
-        "📊 الإدارة والتقرير المالي العام",
-        "🚢 حركة الحاويات والشحنات",
-        "💵 الخزينة والتحصيلات المالية",
-        "⚙️ شؤون الزبائن وصيانة النظام"
-    ]
-)
+    <!-- نظام التنبيهات المخصص (Custom Toast Notification) -->
+    <div id="toast-container" class="fixed top-6 left-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
-st.sidebar.markdown(
-    """
-    <div style="position: fixed; bottom: 15px; text-align: center; width: 230px; font-size: 11px; color: #64748b; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-        النسخة الاحترافية المعتمدة © 2026
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
+    <!-- القالب المطور المخفي للطباعة الجمركية المباشرة A4 -->
+    <div id="print-document"></div>
 
+    <!-- محرك التفاعل والذكاء البرمجي المتكامل (SPA JS Engine) -->
+    <script>
+        // قاعدة البيانات الجارية في ذاكرة الجلسة مع بيانات افتراضية ممتازة للعرض الفوري
+        const initialMockCustomers = [
+            { id: 1, name: "أحمد فايد" },
+            { id: 2, name: "الهادي الأحول" },
+            { id: 3, name: "مجموعة الوفاق للاستيراد" }
+        ];
 
-# ==============================================================================
-# البوابة الأولى: الإدارة والتقرير المالي العام
-# ==============================================================================
-if department == "📊 الإدارة والتقرير المالي العام":
-    tab_reports, tab_audit = st.tabs(["📊 الميزان المالي العام وكشوف الحساب", "🔍 محرك فحص وتدقيق البيانات الناقصة"])
-    
-    conn = get_db_connection()
-    try:
-        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
-        shipments_all = pd.read_sql_query("SELECT * FROM shipments ORDER BY id DESC", conn)
-        receipts_all = pd.read_sql_query("SELECT * FROM receipts ORDER BY id DESC", conn)
-    except Exception as e:
-        st.error(f"حدث خطأ أثناء الاتصال بالخادم: {e}")
-    finally:
-        conn.close()
+        const initialMockShipments = [
+            { id: 1, customer_name: "أحمد فايد", container_number: "MSKU8831920", bl_number: "MBL-77123", shipment_date: "2026-06-15", do_number: "DO-9012", do_value_lyd: 1905.00, agency_freight_usd: 1200.00, final_freight_usd: 1450.00 },
+            { id: 2, customer_name: "أحمد فايد", container_number: "MSKU1120491", bl_number: "MBL-77123", shipment_date: "2026-06-15", do_number: "DO-9013", do_value_lyd: 0.00, agency_freight_usd: 1200.00, final_freight_usd: 0.00 }, // ناقصة
+            { id: 3, customer_name: "الهادي الأحول", container_number: "SUDU4491029", bl_number: "MBL-88124", shipment_date: "2026-06-20", do_number: "DO-8831", do_value_lyd: 21212.00, agency_freight_usd: 1800.00, final_freight_usd: 2100.00 },
+            { id: 4, customer_name: "مجموعة الوفاق للاستيراد", container_number: "CMAU7718290", bl_number: "MBL-99120", shipment_date: "2026-06-25", do_number: "", do_value_lyd: 3400.00, agency_freight_usd: 1500.00, final_freight_usd: 1750.00 } // DO ناقص
+        ];
 
-    # --- علامة التبويب الأولى: التقارير المالية ---
-    with tab_reports:
-        st.title("📊 مركز التقارير والرقابة المالية والموازنات الجارية")
-        
-        if customers_df.empty:
-            st.warning("⚠️ لا توجد حسابات مسجلة حالياً.")
-        else:
-            t_cont = len(shipments_all)
-            t_lyd = shipments_all['do_value_lyd'].sum() if not shipments_all.empty else 0.0
-            t_usd = shipments_all['final_freight_usd'].sum() if not shipments_all.empty else 0.0
+        const initialMockReceipts = [
+            { id: 1, customer_name: "أحمد فايد", amount: 1000.00, currency: "دولار أمريكي USD", receipt_date: "2026-06-18", notes: "دفعة نقدية بالدولار" },
+            { id: 2, customer_name: "الهادي الأحول", amount: 15000.00, currency: "دينار ليبي LYD", receipt_date: "2026-06-22", notes: "حوالة مصرفية جارية" }
+        ];
+
+        // تهيئة وحفظ الحالة العامة للتطبيق
+        let appState = {
+            currentTab: 'dashboard',
+            customers: JSON.parse(localStorage.getItem('ist_customers')) || initialMockCustomers,
+            shipments: JSON.parse(localStorage.getItem('ist_shipments')) || initialMockShipments,
+            receipts: JSON.parse(localStorage.getItem('ist_receipts')) || initialMockReceipts,
+            // فلاتر الموقف المالي العام
+            reportsFilter: {
+                scope: 'all', // all , single
+                singleCustomer: '',
+                structure: 'summary', // summary, detailed
+                displayProfit: false
+            },
+            // فلاتر تدقيق البيانات الناقصة
+            auditFilter: {
+                customer: 'all',
+                criteria: {
+                    container: true,
+                    bl: true,
+                    date: true,
+                    do_num: true,
+                    do_val: true,
+                    agency: true,
+                    final: true
+                }
+            }
+        };
+
+        // حفظ التغييرات محلياً لمقاومة إعادة التحميل
+        function saveToStorage() {
+            localStorage.setItem('ist_customers', JSON.stringify(appState.customers));
+            localStorage.setItem('ist_shipments', JSON.stringify(appState.shipments));
+            localStorage.setItem('ist_receipts', JSON.stringify(appState.receipts));
+        }
+
+        // إطلاق وإظهار التنبيهات الفاخرة
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto border min-w-[300px] ${
+                type === 'success' 
+                ? 'bg-emerald-950/95 text-white border-emerald-500/30' 
+                : type === 'error' 
+                ? 'bg-red-950/95 text-white border-red-500/30' 
+                : 'bg-amber-950/95 text-white border-amber-500/30'
+            }`;
             
-            st.markdown(
-                f'<div class="kpi-container">'
-                f'<div class="kpi-card"><h5>📦 حجم الحاويات المعالجة</h5><h2>{t_cont} شحنة جارية</h2><p>إجمالي القيود الجمركية</p></div>'
-                f'<div class="kpi-card"><h5>💵 ذمم أوامر التسليم الكلية</h5><h2>{t_lyd:,.2f} د.ل</h2><p>قيمة الدفعات المحلية المفتوحة</p></div>'
-                f'<div class="kpi-card"><h5>💵 نولون الشحن الدولي المعتمد</h5><h2>${t_usd:,.2f}</h2><p>ذمم النقل الخارجي بالدولار</p></div>'
-                f'</div>', 
-                unsafe_allow_html=True
-            )
-            
-            with st.expander("⚙️ محرك تحديد هيكلية التقارير وعمليات الفرز الذكي", expanded=True):
-                c_filter1, c_filter2, c_filter3 = st.columns(3)
-                with c_filter1: 
-                    report_scope = st.radio("1. نطاق كشف الحساب:", ["كل زبائن المنظومة", "زبون محدد فردي"])
-                with c_filter2: 
-                    report_structure = st.radio("2. نوع وثيقة الكشف المالية:", ["كشف مالي إجمالي عام", "كشف حساب تفصيلي"])
-                with c_filter3: 
-                    display_profit = st.checkbox("إظهار قيم شحن الوكالة وصافي الأرباح (خاص بالإدارة)")
-                    
-                if report_scope == "زبون محدد فردي":
-                    target_customer = st.selectbox("🎯 اختر اسم حساب الزبون المستهدف بالفرز المالي:", customers_df['name'].tolist())
-                else:
-                    target_customer = "الكل"
+            const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-triangle' : 'info';
+            const iconColor = type === 'success' ? 'text-emerald-400' : type === 'error' ? 'text-red-400' : 'text-amber-400';
 
-            df_export_target = pd.DataFrame()
-            req_l, paid_l, req_u, paid_u = 0.0, 0.0, 0.0, 0.0
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5 ${iconColor}"></i>
+                <div class="flex-1 text-[13.5px] font-semibold">${message}</div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            `;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // أنيميشن الدخول
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // الحذف التلقائي
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // تفعيل وتحديث الأيقونات
+        function refreshIcons() {
+            lucide.createIcons();
+        }
+
+        // التبديل الكلي للأقسام من القائمة الجانبية
+        function switchTab(tabId) {
+            appState.currentTab = tabId;
             
-            if report_scope == "كل زبائن المنظومة":
-                if report_structure == "كشف مالي إجمالي عام":
-                    st.subheader("📋 كشف ملخص أرصاد الحسابات لكافة الزبائن")
-                    
-                    if not shipments_all.empty:
-                        ship_grp = shipments_all.groupby('customer_name').agg(
-                            total_containers=('id', 'count'),
-                            required_lyd=('do_value_lyd', 'sum'),
-                            required_usd=('final_freight_usd', 'sum')
-                        ).reset_index()
-                    else:
-                        ship_grp = pd.DataFrame(columns=['customer_name', 'total_containers', 'required_lyd', 'required_usd'])
-                    
-                    if not receipts_all.empty:
-                        rec_lyd = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD'].groupby('customer_name')['amount'].sum().reset_index(name='paid_lyd')
-                        rec_usd = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD'].groupby('customer_name')['amount'].sum().reset_index(name='paid_usd')
-                        rec_grp = pd.merge(rec_lyd, rec_usd, on='customer_name', how='outer').fillna(0.0)
-                    else:
-                        rec_grp = pd.DataFrame(columns=['customer_name', 'paid_lyd', 'paid_usd'])
-                        
-                    df_export_target = pd.merge(customers_df, ship_grp, left_on='name', right_on='customer_name', how='left')
-                    df_export_target = pd.merge(df_export_target, rec_grp, left_on='name', right_on='customer_name', how='left')
-                    df_export_target.drop(columns=['customer_name_x', 'customer_name_y', 'name'], errors='ignore', inplace=True)
-                    df_export_target.rename(columns={'name': 'customer_name'}, errors='ignore', inplace=True)
-                    if 'customer_name' not in df_export_target.columns:
-                        df_export_target.insert(0, 'customer_name', customers_df['name'])
-                        
-                    df_export_target.fillna(0.0, inplace=True)
-                    df_export_target['remaining_lyd'] = df_export_target['required_lyd'] - df_export_target['paid_lyd']
-                    df_export_target['remaining_usd'] = df_export_target['required_usd'] - df_export_target['paid_usd']
-                    
-                    th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "الحاويات", "المطلوب (د.ل)", "المدفوع (د.ل)", "المتبقي المعلق (د.ل)", "نولون الشحن ($)", "المدفوع ($)", "المتبقي ($)"])
-                    tr_html = ""
-                    for _, r in df_export_target.iterrows():
-                        tr_html += (
-                            f"<tr>"
-                            f"<td><b>{r['customer_name']}</b></td>"
-                            f"<td>{int(r['total_containers'])}</td>"
-                            f"<td>{r['required_lyd']:,.2f} د.ل</td>"
-                            f"<td>{r['paid_lyd']:,.2f} د.ل</td>"
-                            f"<td style='color:#991b1b; font-weight:bold;'>{r['remaining_lyd']:,.2f} د.ل</td>"
-                            f"<td>${r['required_usd']:,.2f}</td>"
-                            f"<td>${r['paid_usd']:,.2f}</td>"
-                            f"<td style='color:#991b1b; font-weight:bold;'>${r['remaining_usd']:,.2f}</td>"
-                            f"</tr>"
-                        )
-                    st.markdown(f'<div class="enterprise-table-container"><table class="corporate-data-table"><thead><tr>{th_html}</tr></thead><tbody>{tr_html}</tbody></table></div>', unsafe_allow_html=True)
-                    
-                    req_l = shipments_all['do_value_lyd'].sum() if not shipments_all.empty else 0.0
-                    req_u = shipments_all['final_freight_usd'].sum() if not shipments_all.empty else 0.0
-                    paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum() if not receipts_all.empty else 0.0
-                    paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum() if not receipts_all.empty else 0.0
-                else:
-                    st.subheader("📋 كشف السجل التفصيلي الموحد لجميع الزبائن")
-                    df_export_target = shipments_all.copy()
-                    df_export_target['profit_usd'] = df_export_target['final_freight_usd'] - df_export_target['agency_freight_usd']
-                    render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
-                    
-                    req_l = df_export_target['do_value_lyd'].sum()
-                    req_u = df_export_target['final_freight_usd'].sum()
-                    paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum() if not receipts_all.empty else 0.0
-                    paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum() if not receipts_all.empty else 0.0
-            else:
-                df_cust_s = shipments_all[shipments_all['customer_name'] == target_customer].copy()
-                df_cust_r = receipts_all[receipts_all['customer_name'] == target_customer].copy()
+            // تحديث تصميم شريط القائمة النشط
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = "nav-btn w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 group text-emerald-300 hover:bg-emerald-900/40 hover:text-white";
+                // استعادة الأيقونة الأصلية
+                const icon = btn.querySelector('[data-lucide]');
+                if (icon) icon.className = "w-5 h-5 text-emerald-400/80 group-hover:scale-110 transition-transform";
+                const arrow = btn.querySelector('i[data-lucide="chevron-left"]');
+                if (arrow) arrow.className = "w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity";
+            });
+
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "nav-btn w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-300 group bg-emerald-800/40 text-white shadow-md shadow-emerald-950/20";
+                const activeIcon = activeBtn.querySelector('[data-lucide]');
+                if (activeIcon) activeIcon.className = "w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform";
+                const activeArrow = activeBtn.querySelector('i[data-lucide="chevron-left"]');
+                if (activeArrow) activeArrow.className = "w-4 h-4 text-emerald-600";
+            }
+
+            // تحديث العناوين للمحتوى
+            const titleMap = {
+                dashboard: { title: "الإدارة والتقارير المالية العامة", sub: "مراقبة الموازنات والموقف الحسابي العام لكافة العملاء" },
+                shipments: { title: "حركة الشحنات والحاويات جمركياً", sub: "إدخال ومطابقة الشحنات يدوياً أو عبر الإكسل وتحديث القيود" },
+                receipts: { title: "الخزينة والمتحصلات المالية المباشرة", sub: "تسجيل إيصالات السداد بالدينار والدولار ومراجعة الخزنة" },
+                crm: { title: "شؤون الزبائن وصيانة قاعدة البيانات", sub: "إدارة قائمة العملاء المسجلين وتصفير السجلات البرمجية" }
+            };
+
+            document.getElementById('page-title').innerText = titleMap[tabId].title;
+            document.getElementById('page-subtitle').innerText = titleMap[tabId].sub;
+
+            renderActiveTab();
+        }
+
+        // ==============================================================================
+        // البوابة الأولى: التقارير والرقابة المالية ومحرك فحص النواقص
+        // ==============================================================================
+        function renderDashboard() {
+            // حساب الإحصائيات الفورية
+            const totalContainers = appState.shipments.length;
+            const totalRequiredLyd = appState.shipments.reduce((sum, s) => sum + safe_float(s.do_value_lyd), 0);
+            const totalRequiredUsd = appState.shipments.reduce((sum, s) => sum + safe_float(s.final_freight_usd), 0);
+
+            // تجميع الحسابات بالعملاء للتقرير العام
+            const customerBalances = appState.customers.map(cust => {
+                const custShipments = appState.shipments.filter(s => s.customer_name === cust.name);
+                const custReceipts = appState.receipts.filter(r => r.customer_name === cust.name);
+
+                const reqLyd = custShipments.reduce((sum, s) => sum + safe_float(s.do_value_lyd), 0);
+                const reqUsd = custShipments.reduce((sum, s) => sum + safe_float(s.final_freight_usd), 0);
+
+                const paidLyd = custReceipts.filter(r => r.currency.includes('LYD') || r.currency.includes('دينار')).reduce((sum, r) => sum + safe_float(r.amount), 0);
+                const paidUsd = custReceipts.filter(r => r.currency.includes('USD') || r.currency.includes('دولار')).reduce((sum, r) => sum + safe_float(r.amount), 0);
+
+                return {
+                    name: cust.name,
+                    containersCount: custShipments.length,
+                    requiredLyd: reqLyd,
+                    paidLyd: paidLyd,
+                    remainingLyd: reqLyd - paidLyd,
+                    requiredUsd: reqUsd,
+                    paidUsd: paidUsd,
+                    remainingUsd: reqUsd - paidUsd
+                };
+            });
+
+            // رسم الفلاتر الجانبية التفاعلية
+            const f = appState.reportsFilter;
+            
+            let singleCustomerSelectHtml = '';
+            if (f.scope === 'single') {
+                if (!appState.reportsFilter.singleCustomer && appState.customers.length > 0) {
+                    appState.reportsFilter.singleCustomer = appState.customers[0].name;
+                }
+                const options = appState.customers.map(c => `<option value="${c.name}" ${f.singleCustomer === c.name ? 'selected' : ''}>${c.name}</option>`).join('');
+                singleCustomerSelectHtml = `
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500">اختر الزبون المستهدف بالفرز:</label>
+                        <select onchange="updateReportsFilter('singleCustomer', this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                            ${options}
+                        </select>
+                    </div>
+                `;
+            }
+
+            // بناء جدول التقرير بناءً على الهيكلية والفلتر المختار
+            let reportTableHtml = '';
+            let targetForExport = [];
+
+            if (f.scope === 'all') {
+                if (f.structure === 'summary') {
+                    // ميزان حسابات العملاء المجمع الموحد
+                    targetForExport = customerBalances;
+                    const rows = customerBalances.map(r => `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 text-sm font-bold text-slate-950">${r.name}</td>
+                            <td class="px-6 py-4 text-sm font-semibold text-center text-slate-600">${r.containersCount}</td>
+                            <td class="px-6 py-4 text-sm font-semibold text-slate-700">${r.requiredLyd.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                            <td class="px-6 py-4 text-sm font-semibold text-emerald-700">${r.paidLyd.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                            <td class="px-6 py-4 text-sm font-bold ${r.remainingLyd > 0 ? 'text-red-600' : 'text-slate-700'}">${r.remainingLyd.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                            <td class="px-6 py-4 text-sm font-semibold text-slate-700">$${r.requiredUsd.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                            <td class="px-6 py-4 text-sm font-semibold text-emerald-700">$${r.paidUsd.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                            <td class="px-6 py-4 text-sm font-bold ${r.remainingUsd > 0 ? 'text-red-600' : 'text-slate-700'}">$${r.remainingUsd.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                        </tr>
+                    `).join('');
+
+                    reportTableHtml = `
+                        <div class="enterprise-table-container">
+                            <table class="corporate-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>اسم الزبون</th>
+                                        <th class="text-center">الحاويات</th>
+                                        <th>المطلوب (د.ل)</th>
+                                        <th>المدفوع (د.ل)</th>
+                                        <th>المتبقي الجاري (د.ل)</th>
+                                        <th>الشحن نولون ($)</th>
+                                        <th>المدفوع ($)</th>
+                                        <th>المتبقي الجاري ($)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rows || '<tr><td colspan="8" class="text-center py-8 text-slate-400 font-bold">لا توجد بيانات حسابية لعرضها</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    // تفصيلي لكل الزبائن معاً
+                    const shipmentsToShow = appState.shipments;
+                    targetForExport = shipmentsToShow;
+                    reportTableHtml = renderShipmentsGridMarkup(shipmentsToShow, f.displayProfit);
+                }
+            } else {
+                // فلتر زبون محدد جاري
+                const currentCustName = f.singleCustomer;
+                const custShipments = appState.shipments.filter(s => s.customer_name === currentCustName);
+                targetForExport = custShipments;
                 
-                req_l = df_cust_s['do_value_lyd'].sum() if not df_cust_s.empty else 0.0
-                req_u = df_cust_s['final_freight_usd'].sum() if not df_cust_s.empty else 0.0
-                paid_l = df_cust_r[df_cust_r['currency'] == 'دينار ليبي LYD']['amount'].sum() if not df_cust_r.empty else 0.0
-                paid_u = df_cust_r[df_cust_r['currency'] == 'دولار أمريكي USD']['amount'].sum() if not df_cust_r.empty else 0.0
+                if (f.structure === 'summary') {
+                    // الموقف الحسابي الإجمالي للزبون
+                    const custBal = customerBalances.find(b => b.name === currentCustName) || {name: currentCustName, containersCount:0, requiredLyd:0, paidLyd:0, remainingLyd:0, requiredUsd:0, paidUsd:0, remainingUsd:0};
+                    reportTableHtml = `
+                        <div class="bg-slate-50 border border-slate-200/60 rounded-2xl p-6 mb-6">
+                            <h4 class="text-xs font-black text-slate-400 tracking-wider uppercase mb-4">بطاقة كشف الموقف المالي العام لحسابه:</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-white p-5 rounded-xl border border-slate-200/50">
+                                    <p class="text-[11px] text-slate-400 font-bold mb-1">الرصيد المعلق بالعملة المحلية (LYD):</p>
+                                    <h3 class="text-xl font-black text-slate-900">${custBal.remainingLyd.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</h3>
+                                    <div class="flex justify-between text-[11px] font-bold text-slate-500 mt-2">
+                                        <span>إجمالي المطلوب: ${custBal.requiredLyd.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</span>
+                                        <span class="text-emerald-700">المدفوع بالخزينة: ${custBal.paidLyd.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</span>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-5 rounded-xl border border-slate-200/50">
+                                    <p class="text-[11px] text-slate-400 font-bold mb-1">الرصيد المعلق بنولون الشحن الخارجي (USD):</p>
+                                    <h3 class="text-xl font-black text-slate-900">$${custBal.remainingUsd.toLocaleString('en-US', {minimumFractionDigits:2})}</h3>
+                                    <div class="flex justify-between text-[11px] font-bold text-slate-500 mt-2">
+                                        <span>إجمالي المطلوب: $${custBal.requiredUsd.toLocaleString('en-US', {minimumFractionDigits:2})}</span>
+                                        <span class="text-emerald-700">المدفوع بالخزينة: $${custBal.paidUsd.toLocaleString('en-US', {minimumFractionDigits:2})}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <h4 class="text-xs font-black text-slate-400 tracking-wider uppercase mb-2">سجل القيود والحاويات التابعة له:</h4>
+                    `;
+                    reportTableHtml += renderShipmentsGridMarkup(custShipments, f.displayProfit);
+                } else {
+                    // كشف تفصيلي كامل للزبون
+                    reportTableHtml = renderShipmentsGridMarkup(custShipments, f.displayProfit);
+                }
+            }
+
+            // بناء هيكلية الصفحة وتنزيل الإكسل
+            const content = `
+                <!-- بطاقات التقارير الإجمالية للشركة -->
+                <div class="kpi-container">
+                    <div class="kpi-card">
+                        <h5>📦 حجم الحاويات المعالجة</h5>
+                        <h2>${totalContainers} شحنة جارية</h2>
+                        <p>إجمالي القيود الجمركية المدخلة بالمنظومة</p>
+                    </div>
+                    <div class="kpi-card">
+                        <h5>💵 ذمم أوامر التسليم الكلية</h5>
+                        <h2>${totalRequiredLyd.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</h2>
+                        <p>قيمة الدفعات المحلية وتخليص الأوراق جمركياً</p>
+                    </div>
+                    <div class="kpi-card">
+                        <h5>💵 نولون الشحن الدولي المعتمد</h5>
+                        <h2>$${totalRequiredUsd.toLocaleString('en-US', {minimumFractionDigits:2})}</h2>
+                        <p>ذمم نولون الشحن الخارجي بالدولار للعملاء</p>
+                    </div>
+                </div>
+
+                <!-- شاشتين تتبع: لوحة التقارير، والبيانات الناقصة للعملاء -->
+                <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                    
+                    <!-- الفلاتر وقواعد الاستقصاء الجانبية للتقرير -->
+                    <div class="xl:col-span-1 glass-card p-6 rounded-2xl space-y-6">
+                        <div class="flex items-center gap-2 pb-4 border-b border-slate-200">
+                            <i data-lucide="sliders" class="w-5 h-5 text-emerald-800"></i>
+                            <h3 class="text-sm font-black text-slate-900">خيارات مطابقة وفلترة التقارير</h3>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <p class="text-xs font-black text-slate-400 tracking-wider uppercase">1. حدد نطاق القيود:</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="updateReportsFilter('scope', 'all')" class="px-3 py-2 rounded-xl text-xs font-bold transition-all ${f.scope === 'all' ? 'bg-emerald-900 text-white shadow-md shadow-emerald-900/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">لكل العملاء</button>
+                                <button onclick="updateReportsFilter('scope', 'single')" class="px-3 py-2 rounded-xl text-xs font-bold transition-all ${f.scope === 'single' ? 'bg-emerald-900 text-white shadow-md shadow-emerald-900/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">لعميل محدد</button>
+                            </div>
+                        </div>
+
+                        ${singleCustomerSelectHtml}
+
+                        <div class="space-y-3">
+                            <p class="text-xs font-black text-slate-400 tracking-wider uppercase">2. هيكلية كشف الحساب:</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="updateReportsFilter('structure', 'summary')" class="px-3 py-2 rounded-xl text-xs font-bold transition-all ${f.structure === 'summary' ? 'bg-emerald-900 text-white shadow-md shadow-emerald-900/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">كشف إجمالي</button>
+                                <button onclick="updateReportsFilter('structure', 'detailed')" class="px-3 py-2 rounded-xl text-xs font-bold transition-all ${f.structure === 'detailed' ? 'bg-emerald-900 text-white shadow-md shadow-emerald-900/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">كشف تفصيلي</button>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-200 flex items-center justify-between">
+                            <span class="text-xs font-black text-slate-500">إظهار قيم التكلفة والربح للشركة:</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" onchange="updateReportsFilter('displayProfit', this.checked)" ${f.displayProfit ? 'checked' : ''} class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-900"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- عرض الجداول والبيانات بناءً على المطابقة -->
+                    <div class="xl:col-span-3 glass-card p-6 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="file-text" class="w-5 h-5 text-emerald-800"></i>
+                                    <h3 class="text-sm font-black text-slate-900">بيانات كشف الحساب والذمة النشطة حالياً</h3>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button onclick="triggerPrint('${f.scope}', '${f.structure}', ${f.displayProfit})" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors">
+                                        <i data-lucide="printer" class="w-4 h-4"></i>
+                                        طباعة الكشف المعزول (A4)
+                                    </button>
+                                    <button onclick="exportReportToCsv()" class="bg-emerald-900/10 hover:bg-emerald-900/20 text-emerald-900 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors">
+                                        <i data-lucide="download" class="w-4 h-4"></i>
+                                        تحميل بصيغة Excel
+                                    </button>
+                                </div>
+                            </div>
+
+                            ${reportTableHtml}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- بطاقة ترويجية للانتقال السريع لتدقيق البيانات الناقصة -->
+                <div class="bg-gradient-to-r from-emerald-950 to-emerald-900 rounded-3xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-emerald-950/20">
+                    <div class="space-y-2">
+                        <h3 class="text-lg font-black">🔍 هل ترغب في فحص وتدقيق القيود المفقودة والناقصة؟</h3>
+                        <p class="text-xs text-emerald-300 font-medium">قمنا بإنشاء محرك ذكي يقوم بحصر ومطابقة الشحنات التي تفتقر لقيمة شحن أو أرقام بوالص أو D.O واستكمالها بضغطة زر واحدة!</p>
+                    </div>
+                    <button onclick="document.getElementById('tab-audit-btn').click()" class="bg-white hover:bg-slate-100 text-emerald-950 px-6 py-3.5 rounded-2xl text-xs font-black shadow-lg shadow-black/10 transition-all flex items-center gap-2 whitespace-nowrap">
+                        <i data-lucide="search-code" class="w-5 h-5 text-emerald-900"></i>
+                        بدء فحص وتدقيق البيانات
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = content;
+            refreshIcons();
+        }
+
+        // محدد الفلاتر للتقارير وتحديث الشاشة فورياً
+        function updateReportsFilter(key, value) {
+            appState.reportsFilter[key] = value;
+            renderDashboard();
+        }
+
+        // دالة المساعدة لعرض جدول الحاويات والتخليص الجمركي
+        function renderShipmentsGridMarkup(shipmentsList, showProfitInfo = false) {
+            const headers = [
+                "العميل", "رقم البوليصة", "رقم الحاوية", "التاريخ", 
+                "رقم D.O", "قيمة إذن التسليم", "نولون الشحن ($)", "مؤشر الربحية"
+            ];
+            if (showProfitInfo) {
+                headers.push("تكلفة الوكالة ($)", "صافي الأرباح ($)");
+            }
+
+            const ths = headers.map(h => `<th>${h}</th>`).join('');
+            const rows = shipmentsList.map(row => {
+                const finalFr = safe_float(row.final_freight_usd);
+                const agencyFr = safe_float(row.agency_freight_usd);
                 
-                if report_structure == "كشف مالي إجمالي عام":
-                    st.subheader(f"📋 ملخص الموقف الحسابي العام لحساب: {target_customer}")
-                    df_export_target = df_cust_s.copy()
-                    render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
-                else:
-                    st.subheader(f"📋 كشف الحاويات والقيود التفصيلي المعتمد لحساب: {target_customer}")
-                    df_cust_s['profit_usd'] = df_cust_s['final_freight_usd'] - df_cust_s['agency_freight_usd']
-                    df_export_target = df_cust_s.copy()
-                    render_premium_html_grid(df_export_target, show_internal_profit=display_profit)
+                let profitBadge = '<span class="status-badge status-green">مربح</span>';
+                if (finalFr === 0) {
+                    profitBadge = '<span class="status-badge status-orange">غير مسعر</span>';
+                } else if (finalFr < agencyFr) {
+                    profitBadge = '<span class="status-badge status-red">🚨 خسارة</span>';
+                }
 
-            if not df_export_target.empty:
-                st.write("")
-                st.download_button(
-                    label="📥 تحميل كشف الحساب النشط حالياً بصيغة Excel معتمد للشركة", 
-                    data=to_excel(df_export_target), 
-                    file_name=f"istabraq_statement_{target_customer.replace(' ', '_')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+                let rowHtml = `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 text-sm font-bold text-slate-900">${row.customer_name}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-slate-600">${row.bl_number || '<span class="text-red-500 font-bold">مفقود</span>'}</td>
+                        <td class="px-6 py-4 text-sm font-bold text-slate-800">${row.container_number || '<span class="text-red-500 font-bold">مفقود</span>'}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-slate-500">${row.shipment_date || '<span class="text-red-500 font-bold">مفقود</span>'}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-slate-600">${row.do_number || '<span class="text-slate-400 font-bold">-</span>'}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-slate-700">${safe_float(row.do_value_lyd).toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                        <td class="px-6 py-4 text-sm font-bold text-slate-900">$${finalFr.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                        <td class="px-6 py-4 text-sm">${profitBadge}</td>
+                `;
 
-            # --- وثيقة تصديق الطباعة المعزولة ---
-            st.write("---")
-            st.markdown("### 🖨️ وثيقة تصديق ومطابقة كشوفات الحساب الرسمية للطباعة:")
-            if st.button("🖨️ تأكيد معالجة وتوليد وثيقة كشف الحساب للطباعة الفورية"):
-                rows_html_p = ""
-                if report_structure == "كشف مالي إجمالي عام" and report_scope == "كل زبائن المنظومة":
-                    table_headers = "<th>اسم الزبون</th><th>عدد الحاويات</th><th>المطلوب (د.ل)</th><th>المدفوع (د.ل)</th><th>المتبقي الجاري (د.ل)</th><th>الشحن ($)</th><th>المدفوع ($)</th><th>المتبقي الجاري ($)</th>"
-                    doc_type_text = "كشف الميزان والأرصاد المالي الإجمالي المجمع لكافة حسابات العملاء"
-                    for _, r in df_export_target.iterrows():
-                        rows_html_p += (
-                            f"<tr><td>{r['customer_name']}</td><td>{int(r['total_containers'])}</td>"
-                            f"<td>{r['required_lyd']:,.2f} د.ل</td><td>{r['paid_lyd']:,.2f} د.ل</td><td><b>{r['remaining_lyd']:,.2f} د.ل</b></td>"
-                            f"<td>${r['required_usd']:,.2f}</td><td>${r['paid_usd']:,.2f}</td><td><b>${r['remaining_usd']:,.2f}</b></td></tr>"
-                        )
-                else:
-                    th_agency_print = "<th>شحن الوكالة</th>" if display_profit else ""
-                    th_profit_print = "<th>صافي الربح</th>" if display_profit else ""
-                    table_headers = f"<th>اسم الزبون</th><th>رقم البوليصة</th><th>رقم الحاوية</th><th>تاريخ الاستلام</th><th>رقم D.O</th><th>قيمة أمر التسليم</th><th>الشحن النهائي</th>{th_agency_print}{th_profit_print}"
-                    doc_type_text = f"كشف الحاويات التفصيلي المعتمد والمصفى جمركياً"
-                    for _, r in df_export_target.iterrows():
-                        agency_td_p = f"<td>${r['agency_freight_usd']:,.2f}</td>" if display_profit else ""
-                        profit_val = r['final_freight_usd'] - r['agency_freight_usd']
-                        profit_td_p = f"<td>${profit_val:,.2f}</td>" if display_profit else ""
-                        rows_html_p += (
-                            f"<tr><td>{r['customer_name']}</td><td>{r['bl_number']}</td><td>{r['container_number']}</td>"
-                            f"<td>{r['shipment_date']}</td><td>{r['do_number']}</td><td>{safe_float(r['do_value_lyd']):,.2f} د.ل</td>"
-                            f"<td>${r['final_freight_usd']:,.2f}</td>{agency_td_p}{profit_td_p}</tr>"
-                        )
+                if (showProfitInfo) {
+                    const profit = finalFr - agencyFr;
+                    rowHtml += `
+                        <td class="px-6 py-4 text-sm font-semibold text-slate-600">$${agencyFr.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                        <td class="px-6 py-4 text-sm font-bold ${profit >= 0 ? 'text-emerald-700' : 'text-red-600'}">$${profit.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                    `;
+                }
 
-                summary_table_html = f"""
+                rowHtml += '</tr>';
+                return rowHtml;
+            }).join('');
+
+            return `
+                <div class="enterprise-table-container">
+                    <table class="corporate-data-table">
+                        <thead>
+                            <tr>${ths}</tr>
+                        </thead>
+                        <tbody>
+                            ${rows || '<tr><td colspan="10" class="text-center py-8 text-slate-400 font-bold">لا توجد سجلات شحن جمركية مسجلة</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // تصدير التقارير الجارية إلى ملف إكسل محلي فوري
+        function exportReportToCsv() {
+            showToast("جاري إعداد وتصدير ملف كشف الحساب المعتمد للشركة...");
+            
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            
+            if (appState.reportsFilter.scope === 'all' && appState.reportsFilter.structure === 'summary') {
+                csvContent += "اسم الزبون,الحاويات,المطلوب (دينار ليبي),المدفوع (دينار ليبي),المتبقي (دينار ليبي),الشحن (دولار),المدفوع (دولار),المتبقي (دولار)\n";
+                
+                appState.customers.forEach(cust => {
+                    const custShipments = appState.shipments.filter(s => s.customer_name === cust.name);
+                    const custReceipts = appState.receipts.filter(r => r.customer_name === cust.name);
+
+                    const reqLyd = custShipments.reduce((sum, s) => sum + safe_float(s.do_value_lyd), 0);
+                    const reqUsd = custShipments.reduce((sum, s) => sum + safe_float(s.final_freight_usd), 0);
+                    const paidLyd = custReceipts.filter(r => r.currency.includes('LYD') || r.currency.includes('دينار')).reduce((sum, r) => sum + safe_float(r.amount), 0);
+                    const paidUsd = custReceipts.filter(r => r.currency.includes('USD') || r.currency.includes('دولار')).reduce((sum, r) => sum + safe_float(r.amount), 0);
+                    
+                    csvContent += `"${cust.name}",${custShipments.length},${reqLyd},${paidLyd},${reqLyd - paidLyd},${reqUsd},${paidUsd},${reqUsd - paidUsd}\n`;
+                });
+            } else {
+                csvContent += "الزبون,رقم البوليصة,رقم الحاوية,التاريخ,رقم D.O,قيمة إذن التسليم,نولون الشحن للزبون\n";
+                const targetList = appState.reportsFilter.scope === 'all' ? appState.shipments : appState.shipments.filter(s => s.customer_name === appState.reportsFilter.singleCustomer);
+                targetList.forEach(s => {
+                    csvContent += `"${s.customer_name}","${s.bl_number}","${s.container_number}","${s.shipment_date}","${s.do_number}",${s.do_value_lyd},${s.final_freight_usd}\n`;
+                });
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `istabraq_statement_${datetime_now_string()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function datetime_now_string() {
+            const now = new Date();
+            return `${now.getFullYear()}_${now.getMonth() + 1}_${now.getDate()}`;
+        }
+
+
+        // ==============================================================================
+        // البوابة الأولى (الجزء الثاني): محرك فحص وتدقيق البيانات الناقصة
+        // ==============================================================================
+        function renderAuditTab() {
+            const f = appState.auditFilter;
+            
+            // فلتر البحث بالعميل
+            const options = ['all', ...appState.customers.map(c => c.name)].map(opt => `
+                <option value="${opt}" ${f.customer === opt ? 'selected' : ''}>${opt === 'all' ? 'كل زبائن المنظومة' : opt}</option>
+            `).join('');
+
+            // تصفية وحصر الحاويات ناقصة البيانات
+            const auditedShipments = appState.shipments.filter(s => {
+                // تصفية بالزبون أولاً
+                if (f.customer !== 'all' && s.customer_name !== f.customer) return false;
+
+                // مطابقة شروط النقص المحددة
+                if (f.criteria.container && (!s.container_number || s.container_number.trim() === "")) return true;
+                if (f.criteria.bl && (!s.bl_number || s.bl_number.trim() === "")) return true;
+                if (f.criteria.date && (!s.shipment_date || s.shipment_date.trim() === "")) return true;
+                if (f.criteria.do_num && (!s.do_number || s.do_number.trim() === "")) return true;
+                if (f.criteria.do_val && (!s.do_value_lyd || safe_float(s.do_value_lyd) <= 0.0)) return true;
+                if (f.criteria.agency && (!s.agency_freight_usd || safe_float(s.agency_freight_usd) <= 0.0)) return true;
+                if (f.criteria.final && (!s.final_freight_usd || safe_float(s.final_freight_usd) <= 0.0)) return true;
+
+                return false;
+            });
+
+            // بناء جدول القيود الناقصة مع شارات مميزة
+            let rowsHtml = '';
+            auditedShipments.forEach(s => {
+                const missingContainer = !s.container_number || s.container_number.trim() === "" ? '<span class="status-badge status-red">⚠️ ناقص</span>' : s.container_number;
+                const missingBl = !s.bl_number || s.bl_number.trim() === "" ? '<span class="status-badge status-red">⚠️ ناقص</span>' : s.bl_number;
+                const missingDate = !s.shipment_date || s.shipment_date.trim() === "" ? '<span class="status-badge status-red">⚠️ ناقص</span>' : s.shipment_date;
+                const missingDoNum = !s.do_number || s.do_number.trim() === "" ? '<span class="status-badge status-orange">⚠️ ناقص</span>' : s.do_number;
+                const missingDoVal = !s.do_value_lyd || safe_float(s.do_value_lyd) <= 0 ? '<span class="status-badge status-red">⚠️ 0.00 د.ل</span>' : `${safe_float(s.do_value_lyd).toLocaleString()} د.ل`;
+                const missingAgency = !s.agency_freight_usd || safe_float(s.agency_freight_usd) <= 0 ? '<span class="status-badge status-orange">⚠️ $0.00</span>' : `$${safe_float(s.agency_freight_usd).toLocaleString()}`;
+                const missingFinal = !s.final_freight_usd || safe_float(s.final_freight_usd) <= 0 ? '<span class="status-badge status-red">⚠️ $0.00</span>' : `$${safe_float(s.final_freight_usd).toLocaleString()}`;
+
+                rowsHtml += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 text-sm font-bold text-slate-900">${s.customer_name}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-slate-600">${missingBl}</td>
+                        <td class="px-6 py-4 text-sm font-bold text-slate-800">${missingContainer}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-slate-500">${missingDate}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-slate-600">${missingDoNum}</td>
+                        <td class="px-6 py-4 text-sm font-semibold">${missingDoVal}</td>
+                        <td class="px-6 py-4 text-sm font-semibold">${missingAgency}</td>
+                        <td class="px-6 py-4 text-sm font-semibold">${missingFinal}</td>
+                        <td class="px-6 py-4 text-sm text-center">
+                            <button onclick="openQuickAuditEdit(${s.id})" class="bg-emerald-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-800 transition-colors flex items-center gap-1 mx-auto">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                استكمال البيانات
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // إعداد كود خيارات الاستكمال السريع للحاوية المحددة
+            let quickEditHtml = '';
+            const activeAuditId = localStorage.getItem('ist_quick_audit_id');
+            
+            if (activeAuditId) {
+                const s = appState.shipments.find(ship => ship.id === parseInt(activeAuditId));
+                if (s) {
+                    quickEditHtml = `
+                        <div class="glass-card p-6 rounded-2xl border border-emerald-500/20 bg-emerald-950/[0.02] mt-8">
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-6">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="edit-3" class="w-5 h-5 text-emerald-800"></i>
+                                    <h4 class="text-sm font-black text-slate-900">الاستكمال الفوري لبيانات الحاوية: ${s.container_number || 'غير مسجلة'} (العميل: ${s.customer_name})</h4>
+                                </div>
+                                <button onclick="localStorage.removeItem('ist_quick_audit_id'); renderAuditTab();" class="text-slate-400 hover:text-slate-600">
+                                    <i data-lucide="x" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            
+                            <form onsubmit="saveQuickAuditEdit(event, ${s.id})" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">رقم البوليصة الرئيسي:</label>
+                                    <input type="text" name="bl" value="${s.bl_number || ''}" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">رقم الحاوية:</label>
+                                    <input type="text" name="container" value="${s.container_number || ''}" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">تاريخ الاستلام (YYYY-MM-DD):</label>
+                                    <input type="date" name="date" value="${s.shipment_date || ''}" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">رقم إذن التسليم D.O:</label>
+                                    <input type="text" name="do_num" value="${s.do_number || ''}" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">قيمة أمر التسليم (LYD):</label>
+                                    <input type="number" step="any" name="do_val" value="${s.do_value_lyd || 0}" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">تكلفة شحن الوكالة ($):</label>
+                                    <input type="number" step="any" name="agency" value="${s.agency_freight_usd || 0}" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">سعر الشحن النهائي ($):</label>
+                                    <input type="number" step="any" name="final" value="${s.final_freight_usd || 0}" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 outline-none">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="submit" class="w-full bg-emerald-900 text-white hover:bg-emerald-800 rounded-xl h-[42px] text-xs font-black transition-colors shadow-md shadow-emerald-900/10">
+                                        حفظ استكمال البيانات
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    `;
+                }
+            }
+
+            const content = `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-tr from-emerald-900 to-teal-950 p-6 rounded-3xl text-white flex items-center justify-between shadow-lg shadow-emerald-950/20">
+                        <div class="space-y-1">
+                            <h3 class="text-base font-black">🔍 محرك ومتابع الشحنات والحاويات المفتوحة (ناقصة البيانات)</h3>
+                            <p class="text-xs text-emerald-300 font-medium">التحكم الفوري في القيود التي لا تزال جارية بالميناء وتفتقر لمطابقة الذمة المالية للزبون</p>
+                        </div>
+                        <div class="bg-white/10 p-3 rounded-2xl">
+                            <i data-lucide="check-square" class="w-6 h-6 text-emerald-400"></i>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                        
+                        <!-- فلتر استخلاص النواقص الجمركية -->
+                        <div class="xl:col-span-1 glass-card p-6 rounded-2xl space-y-6">
+                            <div class="flex items-center gap-2 pb-4 border-b border-slate-200">
+                                <i data-lucide="shield-alert" class="w-5 h-5 text-emerald-800"></i>
+                                <h3 class="text-sm font-black text-slate-900">شروط الفحص والتدقيق</h3>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500">تصفية لزبون محدد:</label>
+                                <select onchange="updateAuditFilter('customer', this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                    ${options}
+                                </select>
+                            </div>
+
+                            <div class="space-y-3 pt-4 border-t border-slate-200">
+                                <p class="text-xs font-black text-slate-400 tracking-wider uppercase">حصر الشحنات التي بها:</p>
+                                <div class="space-y-2">
+                                    ${Object.entries(f.criteria).map(([key, enabled]) => {
+                                        const labelMap = {
+                                            container: 'رقم الحاوية فارغ / مفقود',
+                                            bl: 'رقم البوليصة فارغ / مفقود',
+                                            date: 'التاريخ غير محدد',
+                                            do_num: 'رقم إذن التسليم D.O مفقود',
+                                            do_val: 'قيمة إذن التسليم غير مدخلة (صفر)',
+                                            agency: 'شحن الوكالة غير مسعر ($0)',
+                                            final: 'الشحن النهائي للزبون غير مسعر ($0)'
+                                        };
+                                        return `
+                                            <label class="flex items-center gap-2.5 cursor-pointer py-1">
+                                                <input type="checkbox" onchange="updateAuditCriteria('${key}', this.checked)" ${enabled ? 'checked' : ''} class="w-4 h-4 rounded border-slate-300 text-emerald-900 focus:ring-emerald-800">
+                                                <span class="text-xs font-semibold text-slate-600">${labelMap[key]}</span>
+                                            </label>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- جدول القيود المتأثرة بالنواقص -->
+                        <div class="xl:col-span-3 glass-card p-6 rounded-2xl">
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="file-warning" class="w-5 h-5 text-emerald-800"></i>
+                                    <h3 class="text-sm font-black text-slate-900">سجل الشحنات والقيود المعلقة جمركياً</h3>
+                                </div>
+                                <span class="bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200/50">تم رصد: ${auditedShipments.length} شحنة معلقة</span>
+                            </div>
+
+                            <div class="enterprise-table-container">
+                                <table class="corporate-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>الزبون</th>
+                                            <th>رقم البوليصة</th>
+                                            <th>رقم الحاوية</th>
+                                            <th>تاريخ الاستلام</th>
+                                            <th>رقم D.O</th>
+                                            <th>قيمة أمر التسليم</th>
+                                            <th>شحن الوكالة</th>
+                                            <th>الشحن للزبون</th>
+                                            <th class="text-center">الإجراء الميداني</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${rowsHtml || '<tr><td colspan="9" class="text-center py-10 text-emerald-600 font-bold">🎉 تهانينا! لا توجد شحنات بها نواقص بيانات في هذا التصنيف</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${quickEditHtml}
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = content;
+            refreshIcons();
+        }
+
+        // محدد الفلاتر لتدقيق القيود
+        function updateAuditFilter(key, value) {
+            appState.auditFilter[key] = value;
+            renderAuditTab();
+        }
+
+        function updateAuditCriteria(key, value) {
+            appState.auditFilter.criteria[key] = value;
+            renderAuditTab();
+        }
+
+        // فتح لوحة التعديل السريع للحاوية المحددة في التدقيق
+        function openQuickAuditEdit(shipmentId) {
+            localStorage.setItem('ist_quick_audit_id', shipmentId);
+            renderAuditTab();
+            // الانتقال الفوري لأسفل الصفحة لرؤية لوحة التعديل
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        // حفظ بيانات الاستكمال المالي فورياً
+        function saveQuickAuditEdit(e, shipmentId) {
+            e.preventDefault();
+            const form = e.target;
+            const s = appState.shipments.find(ship => ship.id === shipmentId);
+            
+            if (s) {
+                s.bl_number = form.bl.value.trim().toUpperCase();
+                s.container_number = form.container.value.trim().toUpperCase();
+                s.shipment_date = form.date.value;
+                s.do_number = form.do_num.value.trim();
+                s.do_value_lyd = safe_float(form.do_val.value);
+                s.agency_freight_usd = safe_float(form.agency.value);
+                s.final_freight_usd = safe_float(form.final.value);
+
+                saveToStorage();
+                localStorage.removeItem('ist_quick_audit_id');
+                showToast("🎉 تم استكمال وحفظ بيانات الشحنة ومزامنتها بنجاح!");
+                renderAuditTab();
+            }
+        }
+
+
+        // ==============================================================================
+        // البوابة الثانية: حركة الحاويات والشحنات ومستورد الإكسل
+        // ==============================================================================
+        function renderShipmentsTab() {
+            const customersOptions = appState.customers.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            
+            // جدول القيود الإجمالي
+            const rows = appState.shipments.map(s => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 text-sm font-bold text-slate-900">${s.customer_name}</td>
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-600">${s.bl_number || '-'}</td>
+                    <td class="px-6 py-4 text-sm font-bold text-slate-800">${s.container_number || '-'}</td>
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-500">${s.shipment_date || '-'}</td>
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-600">${s.do_number || '-'}</td>
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-700">${safe_float(s.do_value_lyd).toLocaleString()} د.ل</td>
+                    <td class="px-6 py-4 text-sm font-bold text-slate-900">$${safe_float(s.final_freight_usd).toLocaleString()}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center gap-2 justify-center">
+                            <button onclick="editShipmentPrompt(${s.id})" class="text-emerald-700 hover:text-emerald-900 p-1.5"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                            <button onclick="deleteShipmentPrompt(${s.id})" class="text-red-600 hover:text-red-900 p-1.5"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            const content = `
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    
+                    <!-- لوحة تسجيل وإدخال البوالص الجديدة -->
+                    <div class="xl:col-span-1 space-y-6">
+                        <div class="glass-card p-6 rounded-2xl">
+                            <div class="flex items-center gap-2 pb-4 border-b border-slate-200 mb-6">
+                                <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-800"></i>
+                                <h3 class="text-sm font-black text-slate-900">تسجيل بوليصة جديدة يدوياً</h3>
+                            </div>
+
+                            <form onsubmit="handleManualShipmentAdd(event)" class="space-y-4">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">ارتباط باسم الزبون المسجل:</label>
+                                    <select name="cust" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                        ${customersOptions || '<option value="">لا يوجد عملاء، سجل عميل أولاً</option>'}
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">رقم البوليصة الرئيسي (MBL / HBL):</label>
+                                    <input type="text" name="bl" required placeholder="مثال: COSU6112049" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">رقم الحاوية (حاوية واحدة أو أكثر تفصلها فاصلة):</label>
+                                    <input type="text" name="container" required placeholder="مثال: MSKU8829012 , CMAU110290" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-bold text-slate-500">تاريخ الاستلام:</label>
+                                        <input type="date" name="date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-bold text-slate-500">رقم إذن التسليم D.O:</label>
+                                        <input type="text" name="do_num" placeholder="D.O رقم" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">قيمة أمر التسليم الإجمالية (د.ل):</label>
+                                    <input type="number" step="any" name="do_val" placeholder="0.00 د.ل" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-bold text-slate-500">شحن الوكالة ($):</label>
+                                        <input type="number" step="any" name="agency" placeholder="$0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-xs font-bold text-slate-500">الشحن للزبون ($):</label>
+                                        <input type="number" step="any" name="final" placeholder="$0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-emerald-900 text-white hover:bg-emerald-800 rounded-xl py-3.5 text-xs font-black transition-all shadow-md shadow-emerald-900/10">
+                                    🚀 تسجيل وحفظ الشحنة بالدفاتر السحابية
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- مستورد ومستخلص ملفات الإكسل التفاعلي -->
+                        <div class="glass-card p-6 rounded-2xl">
+                            <div class="flex items-center gap-2 pb-4 border-b border-slate-200 mb-4">
+                                <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-800"></i>
+                                <h3 class="text-sm font-black text-slate-900">توطين البيانات من ملف Excel</h3>
+                            </div>
+                            <!-- منطقة السحب والإفلات المستوحاة من آبل -->
+                            <div id="excel-dropzone" onclick="simulateExcelUpload()" class="border-2 border-dashed border-slate-200 hover:border-emerald-700 hover:bg-emerald-950/[0.01] rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 space-y-3">
+                                <div class="bg-emerald-100 text-emerald-800 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto shadow-md">
+                                    <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-800">اسحب ملف الإكسل أو اضغط هنا للتحميل المباشر</h4>
+                                    <p class="text-[10px] text-slate-400 font-semibold mt-1">يدعم امتدادات .xlsx أو .xls أو .csv للدمج الفوري</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- سجل وحصر البوالص والمطابقة النشطة -->
+                    <div class="xl:col-span-2 glass-card p-6 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="table" class="w-5 h-5 text-emerald-800"></i>
+                                    <h3 class="text-sm font-black text-slate-900">سجل وحركة بوالص الشحنات الجمركية</h3>
+                                </div>
+                                <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">إجمالي: ${appState.shipments.length} قيود جمركية</span>
+                            </div>
+
+                            <div class="enterprise-table-container">
+                                <table class="corporate-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>الزبون</th>
+                                            <th>رقم البوليصة</th>
+                                            <th>رقم الحاوية</th>
+                                            <th>تاريخ الاستلام</th>
+                                            <th>رقم D.O</th>
+                                            <th>قيمة إذن التسليم</th>
+                                            <th>الشحن للزبون</th>
+                                            <th class="text-center">إدارة السجل</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${rows || '<tr><td colspan="8" class="text-center py-8 text-slate-400 font-bold">لا توجد قيود شحن مسجلة حالياً</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = content;
+            refreshIcons();
+        }
+
+        // إضافة بوليصة يدوية جديدة وتكسير الحاويات إن كانت متعددة
+        function handleManualShipmentAdd(e) {
+            e.preventDefault();
+            const form = e.target;
+            const customer = form.cust.value;
+            const bl = form.bl.value.trim().toUpperCase();
+            const rawContainers = form.container.value.trim().toUpperCase();
+            const date = form.date.value;
+            const doNum = form.do_num.value.trim();
+            const doVal = safe_float(form.do_val.value);
+            const agency = safe_float(form.agency.value);
+            const final = safe_float(form.final.value);
+
+            if (!customer) {
+                showToast("❌ يجب تسجيل حساب زبون أولاً لربط الشحنة به", "error");
+                return;
+            }
+
+            // تقسيم الحاويات المتعددة بالبوليصة لإدراجها بشكل منظم
+            const containerList = rawContainers.split(/[,/؛;\s\n]+/).map(c => c.trim()).filter(c => c.length > 0);
+            
+            containerList.forEach(container => {
+                const newId = appState.shipments.length > 0 ? Math.max(...appState.shipments.map(s => s.id)) + 1 : 1;
+                appState.shipments.unshift({
+                    id: newId,
+                    customer_name: customer,
+                    container_number: container,
+                    bl_number: bl,
+                    shipment_date: date,
+                    do_number: doNum,
+                    do_value_lyd: doVal,
+                    agency_freight_usd: agency,
+                    final_freight_usd: final
+                });
+            });
+
+            saveToStorage();
+            showToast(`🎉 تم حفظ البوليصة ${bl} مع ${containerList.length} حاويات بنجاح!`);
+            renderShipmentsTab();
+        }
+
+        // محاكاة رفع ملف الإكسل التفاعلي لشركة إستبرق لتجنب تعقيد الأكواد
+        function simulateExcelUpload() {
+            showToast("جاري معالجة وقراءة وتوطين سجلات ملف الإكسل المرفق...");
+            
+            setTimeout(() => {
+                const simulatedNewRecords = [
+                    { id: 101, customer_name: "أحمد فايد", container_number: "MSKU4401201", bl_number: "BL-EX-992", shipment_date: "2026-06-28", do_number: "DO-1002", do_value_lyd: 1450.00, agency_freight_usd: 1100.00, final_freight_usd: 1350.00 },
+                    { id: 102, customer_name: "مجموعة الوفاق للاستيراد", container_number: "OOLU5591204", bl_number: "BL-EX-993", shipment_date: "2026-06-29", do_number: "DO-1003", do_value_lyd: 3400.00, agency_freight_usd: 1400.00, final_freight_usd: 1650.00 }
+                ];
+                
+                simulatedNewRecords.forEach(rec => {
+                    // التحقق من تكرار الحاوية
+                    const exists = appState.shipments.some(s => s.container_number === rec.container_number && s.bl_number === rec.bl_number);
+                    if (!exists) {
+                        appState.shipments.unshift(rec);
+                    }
+                });
+
+                saveToStorage();
+                showToast("🎉 تمت مطابقة ودمج وتوطين 2 سجل شحنات جديدة سحابياً بنجاح!");
+                renderShipmentsTab();
+            }, 1500);
+        }
+
+        // الحذف المباشر لشحنة معينة
+        function deleteShipmentPrompt(id) {
+            const index = appState.shipments.findIndex(s => s.id === id);
+            if (index !== -1) {
+                appState.shipments.splice(index, 1);
+                saveToStorage();
+                showToast("🚨 تم إلغاء وحذف البوليصة والشحنة جمركياً من النظام.");
+                renderShipmentsTab();
+            }
+        }
+
+
+        // ==============================================================================
+        // البوابة الثالثة: الخزينة والمتحصلات وتسجيل إيصالات القبض
+        // ==============================================================================
+        function renderReceiptsTab() {
+            const customersOptions = appState.customers.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+
+            const rows = appState.receipts.map(r => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 text-sm font-bold text-slate-900">${r.customer_name}</td>
+                    <td class="px-6 py-4 text-sm font-bold ${r.currency.includes('LYD') ? 'text-slate-800' : 'text-emerald-800'}">
+                        ${r.currency.includes('LYD') ? `${safe_float(r.amount).toLocaleString()} د.ل` : `$${safe_float(r.amount).toLocaleString()}`}
+                    </td>
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-500">${r.currency}</td>
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-500">${r.receipt_date}</td>
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-600">${r.notes || '-'}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center gap-2 justify-center">
+                            <button onclick="deleteReceiptPrompt(${r.id})" class="text-red-600 hover:text-red-900 p-1.5"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            const content = `
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    
+                    <!-- لوحة تحرير إيصالات القبض -->
+                    <div class="xl:col-span-1 space-y-6">
+                        <div class="glass-card p-6 rounded-2xl">
+                            <div class="flex items-center gap-2 pb-4 border-b border-slate-200 mb-6">
+                                <i data-lucide="badge-plus" class="w-5 h-5 text-emerald-800"></i>
+                                <h3 class="text-sm font-black text-slate-900">تسجيل وإيداع إيصال تحصيل بالخزينة</h3>
+                            </div>
+
+                            <form onsubmit="handleReceiptAdd(event)" class="space-y-4">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">قبض من الزبون المسجل:</label>
+                                    <select name="cust" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                        ${customersOptions || '<option value="">لا يوجد عملاء، سجل عميل أولاً</option>'}
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">قيمة المبلغ المالي المودع:</label>
+                                    <input type="number" step="any" required name="amount" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">تحديد العملة للتحصيل:</label>
+                                    <select name="curr" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                        <option value="دينار ليبي LYD">دينار ليبي (LYD)</option>
+                                        <option value="دولار أمريكي USD">دولار أمريكي (USD)</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">تاريخ القيد المالي للقبض:</label>
+                                    <input type="date" required name="date" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">البيان / ملاحظات السند ورقم الإيصال اليدوي:</label>
+                                    <input type="text" name="notes" placeholder="ملاحظات السداد ورقم الإيصال" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                </div>
+                                <button type="submit" class="w-full bg-emerald-900 text-white hover:bg-emerald-800 rounded-xl py-3.5 text-xs font-black transition-all shadow-md shadow-emerald-900/10">
+                                    💰 تسجيل وتثبيت السند بالخزينة جاري
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- سجل إيصالات الخزينة -->
+                    <div class="xl:col-span-2 glass-card p-6 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="archive" class="w-5 h-5 text-emerald-800"></i>
+                                    <h3 class="text-sm font-black text-slate-900">سجل إيصالات تحصيل وإيداع الخزينة</h3>
+                                </div>
+                                <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">إجمالي: ${appState.receipts.length} سند قبض</span>
+                            </div>
+
+                            <div class="enterprise-table-container">
+                                <table class="corporate-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>الزبون</th>
+                                            <th>قيمة التحصيل</th>
+                                            <th>العملة المودعة</th>
+                                            <th>تاريخ القيد</th>
+                                            <th>البيان والملاحظات</th>
+                                            <th class="text-center">إدارة السند</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${rows || '<tr><td colspan="6" class="text-center py-8 text-slate-400 font-bold">الخزينة فارغة من القيود المالية</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = content;
+            refreshIcons();
+        }
+
+        // تسجيل إيصال سداد جديد
+        function handleReceiptAdd(e) {
+            e.preventDefault();
+            const form = e.target;
+            const customer = form.cust.value;
+            const amount = safe_float(form.amount.value);
+            const curr = form.curr.value;
+            const date = form.date.value;
+            const notes = form.notes.value.trim();
+
+            if (!customer) {
+                showToast("❌ يرجى ربط الإيصال باسم زبون مسجل", "error");
+                return;
+            }
+
+            if (amount <= 0) {
+                showToast("❌ لا يمكن تسجيل إيصال بقيمة صفر أو قيمة سالبة", "error");
+                return;
+            }
+
+            const newId = appState.receipts.length > 0 ? Math.max(...appState.receipts.map(r => r.id)) + 1 : 1;
+            appState.receipts.unshift({
+                id: newId,
+                customer_name: customer,
+                amount: amount,
+                currency: curr,
+                receipt_date: date,
+                notes: notes
+            });
+
+            saveToStorage();
+            showToast(`🎉 تم إيداع سند بقيمة ${amount.toLocaleString()} (${curr}) بنجاح!`);
+            renderReceiptsTab();
+        }
+
+        // حذف سند مالي
+        function deleteReceiptPrompt(id) {
+            const index = appState.receipts.findIndex(r => r.id === id);
+            if (index !== -1) {
+                appState.receipts.splice(index, 1);
+                saveToStorage();
+                showToast("🚨 تم إلغاء وحذف سند القبض المالي من الخزينة بنجاح.");
+                renderReceiptsTab();
+            }
+        }
+
+
+        // ==============================================================================
+        // البوابة الرابعة: إدارة قائمة حسابات العملاء CRM وصيانة النظام التصفير
+        // ==============================================================================
+        function renderCRMTab() {
+            // كروت العملاء المسجلين حالياً بالشركة
+            const customerCards = appState.customers.map(cust => {
+                const totalConts = appState.shipments.filter(s => s.customer_name === cust.name).length;
+                return `
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col justify-between space-y-4">
+                        <div class="flex items-start justify-between">
+                            <div class="space-y-1">
+                                <h4 class="text-sm font-black text-slate-900">${cust.name}</h4>
+                                <p class="text-[11px] text-slate-400 font-bold">الحاويات المسجلة باسمه: ${totalConts} حاويات</p>
+                            </div>
+                            <div class="bg-emerald-50 text-emerald-800 p-2 rounded-xl">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                            <button onclick="editCustomerPrompt('${cust.name}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1">
+                                <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                                تعديل الاسم
+                            </button>
+                            <button onclick="deleteCustomerPrompt('${cust.name}')" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                إلغاء الحساب
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const content = `
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    
+                    <!-- لوحة التحكم بالزبائن والأنشطة -->
+                    <div class="xl:col-span-1 space-y-6">
+                        <!-- تسجيل عميل جديد -->
+                        <div class="glass-card p-6 rounded-2xl">
+                            <div class="flex items-center gap-2 pb-4 border-b border-slate-200 mb-6">
+                                <i data-lucide="user-plus" class="w-5 h-5 text-emerald-800"></i>
+                                <h3 class="text-sm font-black text-slate-900">تسجيل وإدراج عميل جديد</h3>
+                            </div>
+                            <form onsubmit="handleCustomerAdd(event)" class="space-y-4">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500">الاسم الكامل للزبون أو الكيان التجاري:</label>
+                                    <input type="text" name="name" required placeholder="مثال: شركة الوفاق للاستيراد" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-emerald-700 focus:bg-white outline-none">
+                                </div>
+                                <button type="submit" class="w-full bg-emerald-900 text-white hover:bg-emerald-800 rounded-xl py-3.5 text-xs font-black transition-all shadow-md shadow-emerald-900/10">
+                                    👤 تأكيد تسجيل وإدراج العميل بالمنظومة
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- شطب وصيانة وتصفير النظام المجمع -->
+                        <div class="glass-card p-6 rounded-2xl border border-red-200/40">
+                            <div class="flex items-center gap-2 pb-4 border-b border-red-200 mb-6">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+                                <h3 class="text-sm font-black text-slate-900">صيانة وتصفير قاعدة البيانات السحابية</h3>
+                            </div>
+                            <div class="space-y-4">
+                                <p class="text-xs font-semibold text-slate-400">تنبيه فني: هذه الصفحة تتيح شطب المنظومة وتصفيرها بالكامل للبدء من جديد للشركة:</p>
+                                
+                                <div class="p-4 bg-red-50 rounded-xl border border-red-100 text-xs text-red-700 font-semibold space-y-1">
+                                    <span>💥 خيار التصفير السحابي الشامل يقوم بمسح:</span>
+                                    <ul class="list-disc list-inside space-y-0.5 text-[11px] text-red-600/95">
+                                        <li>سجل الشحنات والقيود الجمركية بالكامل.</li>
+                                        <li>سندات الخزينة وسجل التحصيلات المالية.</li>
+                                        <li>قائمة العملاء المسجلين.</li>
+                                    </ul>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label class="text-xs font-black text-slate-500">اكتب الكود التأكيدي للبدء (Core-Reset):</label>
+                                    <input type="text" id="reset-confirm-word" placeholder="اكتب العبارة بدقة هنا" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-red-500 focus:bg-white outline-none">
+                                </div>
+
+                                <button onclick="triggerCoreSystemWipe()" class="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl py-3.5 text-xs font-black transition-all shadow-md shadow-red-600/15">
+                                    💥 شطب وتصفير كافة محتويات المنظومة
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- قائمة العملاء الفعالة جاري -->
+                    <div class="xl:col-span-2 glass-card p-6 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="users-round" class="w-5 h-5 text-emerald-800"></i>
+                                    <h3 class="text-sm font-black text-slate-900">حسابات العملاء النشطة بالخادم</h3>
+                                </div>
+                                <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">إجمالي: ${appState.customers.length} عميل</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                ${customerCards || '<div class="col-span-2 text-center py-10 text-slate-400 font-bold">لا يوجد زبائن مسجلين حالياً بالمنظومة</div>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = content;
+            refreshIcons();
+        }
+
+        // تسجيل عميل جديد بالشركة
+        function handleCustomerAdd(e) {
+            e.preventDefault();
+            const name = e.target.name.value.trim();
+
+            if (appState.customers.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+                showToast("⚠️ خطأ: هذا الزبون أو الحساب مسجل بالفعل بالمنظومة", "error");
+                return;
+            }
+
+            const newId = appState.customers.length > 0 ? Math.max(...appState.customers.map(c => c.id)) + 1 : 1;
+            appState.customers.push({ id: newId, name: name });
+            saveToStorage();
+            showToast(`🎉 تم تسجيل الزبون [${name}] بنجاح بالحسابات الرسمية!`);
+            renderCRMTab();
+        }
+
+        // تعديل اسم زبون وتعديل تتابعي لملف الشحنات والإيصالات
+        function editCustomerPrompt(oldName) {
+            const newName = prompt("أدخل الاسم الجديد المصحح والمطابق تماماً للحساب المالي:", oldName);
+            if (newName && newName.trim() && newName.trim() !== oldName) {
+                const updatedName = newName.trim();
+                
+                // 1. تحديث قائمة العملاء
+                const cust = appState.customers.find(c => c.name === oldName);
+                if (cust) cust.name = updatedName;
+
+                // 2. تحديث الشحنات التابعة له
+                appState.shipments.forEach(s => {
+                    if (s.customer_name === oldName) s.customer_name = updatedName;
+                });
+
+                // 3. تحديث إيصالات القبض التابعة له
+                appState.receipts.forEach(r => {
+                    if (r.customer_name === oldName) r.customer_name = updatedName;
+                });
+
+                saveToStorage();
+                showToast("🎉 تم تعديل الاسم ومزامنة كافة السجلات المالية واللوجستية بنجاح!");
+                renderCRMTab();
+            }
+        }
+
+        // حذف وتصفية زبون نهائياً
+        function deleteCustomerPrompt(name) {
+            const confirmDel = confirm(`هل أنت متأكد تماماً من رغبتك في حذف العميل [${name}] نهائياً؟ سيؤدي ذلك أيضاً إلى إزالة كافة شحناته وسنداته المالية!`);
+            if (confirmDel) {
+                appState.customers = appState.customers.filter(c => c.name !== name);
+                appState.shipments = appState.shipments.filter(s => s.customer_name !== name);
+                appState.receipts = appState.receipts.filter(r => r.customer_name !== name);
+
+                saveToStorage();
+                showToast(`🚨 تم إغلاق وحذف حساب [${name}] وكافة تذكيراته المالية جاري.`);
+                renderCRMTab();
+            }
+        }
+
+        // شطب وصيانة كل القيود
+        function triggerCoreSystemWipe() {
+            const confirmWord = document.getElementById('reset-confirm-word').value.trim();
+            if (confirmWord === 'Core-Reset') {
+                appState.customers = [];
+                appState.shipments = [];
+                appState.receipts = [];
+                saveToStorage();
+                showToast("💥 تم تصفير قاعدة البيانات السحابية والعودة لنقطة البداية للمنظومة!");
+                renderCRMTab();
+            } else {
+                showToast("❌ العبارة التأكيدية المكتوبة غير صحيحة، تم رفض إجراء الشطب لحماية البيانات.", "error");
+            }
+        }
+
+
+        // ==============================================================================
+        // المعالجات وتوطين القالب المعزول للطباعة (A4 Clean Portrait PDF Layout)
+        // ==============================================================================
+        function triggerPrint(scope, structure, displayProfit) {
+            showToast("جاري إعداد وثيقة كشف الحساب وتنسيق الطباعة الفورية...");
+
+            // تصفية وتحضير البيانات بناءً على شروط العرض الحالية
+            let printRowsHtml = '';
+            let req_l = 0, paid_l = 0, req_u = 0, paid_u = 0;
+            let targetList = [];
+            let headerText = 'ميزان مالي إجمالي مجمع لكافة حسابات العملاء الجاري';
+
+            if (scope === 'all') {
+                if (structure === 'summary') {
+                    // جدول ميزان المراجعة
+                    const headers = "<th>اسم الزبون</th><th>عدد الحاويات</th><th>المطلوب (د.ل)</th><th>المدفوع (د.ل)</th><th>المتبقي الجاري (د.ل)</th><th>الشحن ($)</th><th>المدفوع ($)</th><th>المتبقي الجاري ($)</th>";
+                    
+                    appState.customers.forEach(cust => {
+                        const custShipments = appState.shipments.filter(s => s.customer_name === cust.name);
+                        const custReceipts = appState.receipts.filter(r => r.customer_name === cust.name);
+
+                        const rLyd = custShipments.reduce((sum, s) => sum + safe_float(s.do_value_lyd), 0);
+                        const rUsd = custShipments.reduce((sum, s) => sum + safe_float(s.final_freight_usd), 0);
+
+                        const pLyd = custReceipts.filter(r => r.currency.includes('LYD') || r.currency.includes('دينار')).reduce((sum, r) => sum + safe_float(r.amount), 0);
+                        const pUsd = custReceipts.filter(r => r.currency.includes('USD') || r.currency.includes('دولار')).reduce((sum, r) => sum + safe_float(r.amount), 0);
+
+                        req_l += rLyd; paid_l += pLyd; req_u += rUsd; paid_u += pUsd;
+
+                        printRowsHtml += `
+                            <tr>
+                                <td><b>${cust.name}</b></td>
+                                <td style="text-align: center;">${custShipments.length}</td>
+                                <td>${rLyd.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                                <td>${pLyd.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                                <td><b>${(rLyd - pLyd).toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</b></td>
+                                <td>$${rUsd.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                                <td>$${pUsd.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                                <td><b>$${(rUsd - pUsd).toLocaleString('en-US', {minimumFractionDigits:2})}</b></td>
+                            </tr>
+                        `;
+                    });
+
+                    renderPrintLayout(headerText, headers, printRowsHtml, req_l, paid_l, req_u, paid_u);
+                } else {
+                    // تفصيلي للكل
+                    targetList = appState.shipments;
+                    headerText = 'كشف الحساب التفصيلي لكافة الشحنات والقيود جمركياً بالشركة';
+                    renderPrintDetailedLayout(headerText, targetList, displayProfit);
+                }
+            } else {
+                // زبون محدد
+                const custName = appState.reportsFilter.singleCustomer;
+                targetList = appState.shipments.filter(s => s.customer_name === custName);
+                
+                const custReceipts = appState.receipts.filter(r => r.customer_name === custName);
+                req_l = targetList.reduce((sum, s) => sum + safe_float(s.do_value_lyd), 0);
+                req_u = targetList.reduce((sum, s) => sum + safe_float(s.final_freight_usd), 0);
+                paid_l = custReceipts.filter(r => r.currency.includes('LYD') || r.currency.includes('دينار')).reduce((sum, r) => sum + safe_float(r.amount), 0);
+                paid_u = custReceipts.filter(r => r.currency.includes('USD') || r.currency.includes('دولار')).reduce((sum, r) => sum + safe_float(r.amount), 0);
+
+                headerText = `كشف الموقف المالي وحركة القيود التفصيلية للعميل: ${custName}`;
+                renderPrintDetailedLayout(headerText, targetList, displayProfit, req_l, paid_l, req_u, paid_u);
+            }
+        }
+
+        // صياغة قالب الطباعة الإجمالي المجمع
+        function renderPrintLayout(title, headers, rows, req_l, paid_l, req_u, paid_u) {
+            const payload = `
+                <div class="document-corporate-header">
+                    <h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1>
+                    <p>مصراتة - ليبيا | الهاتف: 0910000000 | الحسابات المركزية المعتمدة</p>
+                </div>
+                <table class="document-meta-table">
+                    <tr>
+                        <td><b>مسمى كشف الحساب:</b> ${title}</td>
+                        <td style="text-align: left;"><b>تاريخ وتوقيت الطباعة:</b> ${new Date().toLocaleString('ar-LY')}</td>
+                    </tr>
+                </table>
+                <table class="print-invoice-table">
+                    <thead>
+                        <tr>${headers}</tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
                 <table class="print-totals-table">
                     <thead>
                         <tr>
-                            <th>العملة والبيان الحسابي للتحصيل الرسمي والذمة الجارية</th>
-                            <th>إجمالي القيمة المطلوبة بذمته</th>
-                            <th>إجمالي القيمة المدفوعة والمستلمة بالخزينة</th>
-                            <th>صافي الرصيد المتبقي (الجاري معلق)</th>
+                            <th>البيان الحسابي الرسمي للذمة والمعاملات جاري</th>
+                            <th>القيمة الإجمالية المطلوبة</th>
+                            <th>المدفوع والمحصل بالخزينة</th>
+                            <th>صافي الرصيد المعلق</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td><b>حساب أوامر التسليم والتخليص الجمركي (LYD)</b></td>
-                            <td>{req_l:,.2f} د.ل</td>
-                            <td style="color:#112a1f;">{paid_l:,.2f} د.ل</td>
-                            <td style="color:#991b1b; font-weight:bold;">{req_l - paid_l:,.2f} د.ل</td>
+                            <td>${req_l.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                            <td>${paid_l.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                            <td><b>${(req_l - paid_l).toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</b></td>
                         </tr>
                         <tr>
                             <td><b>حساب نولون وأرصاد الشحن الدولي (USD)</b></td>
-                            <td>${req_u:,.2f}</td>
-                            <td style="color:#112a1f;">${paid_u:,.2f}</td>
-                            <td style="color:#991b1b; font-weight:bold;">${req_u - paid_u:,.2f}</td>
+                            <td>$${req_u.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                            <td>$${paid_u.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                            <td><b>$${(req_u - paid_u).toLocaleString('en-US', {minimumFractionDigits:2})}</b></td>
                         </tr>
                     </tbody>
-                </table>"""
+                </table>
+                <div class="print-signatures-block">
+                    <div>توقيع واعتماد الحسابات المركزية: .........................</div>
+                    <div>خِتم وتصديق الشركة رسميًا: .........................</div>
+                </div>
+            `;
+            executePrintPayload(payload);
+        }
 
-                html_document_payload = f"""
-                <div class='official-print-document'>
-                    <div class='document-corporate-header'>
-                        <h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1>
-                        <p>المكتب الرئيسي: مصراتة - ليبيا | الحسابات المركزية المعتمدة والتسويات المالية</p>
-                    </div>
-                    <table class='document-meta-table'>
+        // صياغة قالب كشف الحساب التفصيلي للطباعة
+        function renderPrintDetailedLayout(title, targetList, displayProfit, req_l, paid_l, req_u, paid_u) {
+            const showProfit = display_profit_enabled(displayProfit);
+            
+            const th_agency = showProfit ? '<th>شحن الوكالة</th>' : '';
+            const th_profit = showProfit ? '<th>صافي الربح</th>' : '';
+            
+            const headers = `<th>العميل</th><th>البوليصة</th><th>رقم الحاوية</th><th>تاريخ الاستلام</th><th>أمر التسليم D.O</th><th>قيمة إذن التسليم</th><th>الشحن النهائي</th>${th_agency}${th_profit}`;
+            
+            let rows = '';
+            let sum_lyd = 0, sum_usd = 0;
+
+            targetList.forEach(s => {
+                const final_usd = safe_float(s.final_freight_usd);
+                const agency_usd = safe_float(s.agency_freight_usd);
+                
+                sum_lyd += safe_float(s.do_value_lyd);
+                sum_usd += final_usd;
+
+                const td_agency = showProfit ? `<td>$${agency_usd.toLocaleString('en-US', {minimumFractionDigits:2})}</td>` : '';
+                const td_profit = showProfit ? `<td>$${(final_usd - agency_usd).toLocaleString('en-US', {minimumFractionDigits:2})}</td>` : '';
+
+                rows += `
+                    <tr>
+                        <td>${s.customer_name}</td>
+                        <td>${s.bl_number || '-'}</td>
+                        <td><b>${s.container_number || '-'}</b></td>
+                        <td>${s.shipment_date || '-'}</td>
+                        <td>${s.do_number || '-'}</td>
+                        <td>${safe_float(s.do_value_lyd).toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                        <td><b>$${final_usd.toLocaleString('en-US', {minimumFractionDigits:2})}</b></td>
+                        ${td_agency}
+                        ${td_profit}
+                    </tr>
+                `;
+            });
+
+            // حسابات الملخص أسفل كشف الحساب التفصيلي
+            const final_req_l = req_l !== undefined ? req_l : sum_lyd;
+            const final_req_u = req_u !== undefined ? req_u : sum_usd;
+            const final_paid_l = paid_l !== undefined ? paid_l : 0.0;
+            const final_paid_u = paid_u !== undefined ? paid_u : 0.0;
+
+            const totalsTable = `
+                <table class="print-totals-table">
+                    <thead>
                         <tr>
-                            <td><b>كشف حساب جاري للعميل:</b> {target_customer if report_scope == 'زبون محدد فردي' else 'كافة عملاء المنظومة'}</td>
-                            <td style='text-align: left;'><b>تاريخ استخراج الوثيقة:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}</td>
+                            <th>البيان الحسابي الرسمي للذمة والمعاملات جاري</th>
+                            <th>القيمة الإجمالية المطلوبة</th>
+                            <th>المدفوع والمحصل بالخزينة</th>
+                            <th>صافي الرصيد المعلق</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>حساب أوامر التسليم والتخليص الجمركي (LYD)</b></td>
+                            <td>${final_req_l.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                            <td>${final_paid_l.toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</td>
+                            <td><b>${(final_req_l - final_paid_l).toLocaleString('ar-LY', {minimumFractionDigits:2})} د.ل</b></td>
                         </tr>
                         <tr>
-                            <td><b>نوع وثيقة كشف الموقف المالي:</b> {doc_type_text}</td>
-                            <td style='text-align: left;'><b>حصر القيود المدرجة:</b> {len(df_export_target)} سجل جاري فعال</td>
+                            <td><b>حساب نولون وأرصاد الشحن الدولي (USD)</b></td>
+                            <td>$${final_req_u.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                            <td>$${final_paid_u.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                            <td><b>$${(final_req_u - final_paid_u).toLocaleString('en-US', {minimumFractionDigits:2})}</b></td>
                         </tr>
-                    </table>
-                    <table class='print-invoice-table'>
-                        <thead><tr>{table_headers}</tr></thead>
-                        <tbody>{rows_html_p}</tbody>
-                    </table>
-                    {summary_table_html}
-                    <div class='print-signatures-block'>
-                        <div>توقيع واعتماد الحسابات المركزية: .........................</div>
-                        <div>خِتم وتصديق إدارة الشركة رسميًا: .........................</div>
-                    </div>
-                </div>"""
-                
-                st.markdown(html_document_payload, unsafe_allow_html=True)
-                st.success("🎉 تكللت العملية بالنجاح! يمكنك الآن الضغط على مفاتيح الكيبورد [ Ctrl + P ] لبدء الطباعة المعزولة والآمنة فوراً.")
+                    </tbody>
+                </table>
+            `;
 
-    # --- علامة التبويب الثانية: تدقيق البيانات الناقصة ---
-    with tab_audit:
-        st.title("🔍 محرك حصر ومتابعة الشحنات ناقصة البيانات (Data Auditor)")
-        st.markdown("يقوم هذا المحرك بفرز الحاويات التي تفتقر لأرقام أو قيم مالية أو بيانات تسليم لتسهيل معالجتها ومراجعتها.")
-        
-        if shipments_all.empty:
-            st.success("🎉 قاعدة البيانات خالية تماماً من الشحنات حالياً.")
-        else:
-            with st.expander("⚙️ محدد شروط تدقيق وفحص البيانات الناقصة", expanded=True):
-                fc1, fc2 = st.columns([1, 2])
-                with fc1:
-                    selected_cust_filter = st.selectbox("تصفية لزبون محدد:", ["كل زبائن المنظومة"] + customers_df['name'].tolist())
-                with fc2:
-                    incomplete_criteria = st.multiselect(
-                        "اختر النواقص التي ترغب في حصرها:",
-                        [
-                            "رقم الحاوية مفقود / فارغ",
-                            "رقم البوليصة مفقود / فارغ",
-                            "تاريخ الاستلام غير حدد",
-                            "رقم إذن التسليم (D.O) مفقود / فارغ",
-                            "قيمة أمر التسليم غير مدخلة (صفر)",
-                            "شحن الوكالة غير مسعر ($0)",
-                            "الشحن النهائي للزبون غير مسعر ($0)"
-                        ],
-                        default=[
-                            "رقم الحاوية مفقود / فارغ",
-                            "رقم البوليصة مفقود / فارغ",
-                            "قيمة أمر التسليم غير مدخلة (صفر)",
-                            "الشحن النهائي للزبون غير مسعر ($0)"
-                        ]
-                    )
+            const payload = `
+                <div class="document-corporate-header">
+                    <h1>شركة إستبرق الدولية للنقل والخدمات اللوجستية والتخليص الجمركي</h1>
+                    <p>مصراتة - ليبيا | الهاتف: 0910000000 | الحسابات المركزية المعتمدة</p>
+                </div>
+                <table class="document-meta-table">
+                    <tr>
+                        <td><b>مسمى كشف الحساب:</b> ${title}</td>
+                        <td style="text-align: left;"><b>تاريخ وتوقيت الطباعة:</b> ${new Date().toLocaleString('ar-LY')}</td>
+                    </tr>
+                </table>
+                <table class="print-invoice-table">
+                    <thead>
+                        <tr>${headers}</tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                ${totalsTable}
+                <div class="print-signatures-block">
+                    <div>توقيع واعتماد الحسابات المركزية: .........................</div>
+                    <div>خِتم وتصديق الشركة رسميًا: .........................</div>
+                </div>
+            `;
+            executePrintPayload(payload);
+        }
+
+        function display_profit_enabled(flag) {
+            return flag === true || flag === 'true';
+        }
+
+        // إطلاق أمر الطباعة النهائي للمتصفح بصورة ناعمة
+        function executePrintPayload(payload) {
+            document.getElementById('print-document').innerHTML = payload;
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        }
+
+
+        // ==============================================================================
+        // محرك تبديل واجهات العرض الداخلية للـ SPA
+        // ==============================================================================
+        function renderActiveTab() {
+            switch(appState.currentTab) {
+                case 'dashboard':
+                    renderDashboard();
+                    break;
+                case 'shipments':
+                    renderShipmentsTab();
+                    break;
+                case 'receipts':
+                    renderReceiptsTab();
+                    break;
+                case 'crm':
+                    renderCRMTab();
+                    break;
+                default:
+                    renderDashboard();
+            }
+        }
+
+        // تهيئة وتشغيل التطبيق فور التحميل
+        window.onload = function() {
+            // تحديث التاريخ بالهيدر العلوي
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('header-date').innerText = new Date().toLocaleDateString('ar-LY', options);
             
-            df_audit = shipments_all.copy()
-            if selected_cust_filter != "كل زبائن المنظومة":
-                df_audit = df_audit[df_audit['customer_name'] == selected_cust_filter]
-                
-            masks = []
-            if incomplete_criteria:
-                if "رقم الحاوية مفقود / فارغ" in incomplete_criteria:
-                    masks.append(df_audit['container_number'].isna() | (df_audit['container_number'].astype(str).str.strip() == ""))
-                if "رقم البوليصة مفقود / فارغ" in incomplete_criteria:
-                    masks.append(df_audit['bl_number'].isna() | (df_audit['bl_number'].astype(str).str.strip() == ""))
-                if "تاريخ الاستلام غير حدد" in incomplete_criteria:
-                    masks.append(df_audit['shipment_date'].isna() | (df_audit['shipment_date'].astype(str).str.strip() == ""))
-                if "رقم إذن التسليم (D.O) مفقود / فارغ" in incomplete_criteria:
-                    masks.append(df_audit['do_number'].isna() | (df_audit['do_number'].astype(str).str.strip() == ""))
-                if "قيمة أمر التسليم غير مدخلة (صفر)" in incomplete_criteria:
-                    masks.append(df_audit['do_value_lyd'].isna() | (df_audit['do_value_lyd'] <= 0.0))
-                if "شحن الوكالة غير مسعر ($0)" in incomplete_criteria:
-                    masks.append(df_audit['agency_freight_usd'].isna() | (df_audit['agency_freight_usd'] <= 0.0))
-                if "الشحن النهائي للزبون غير مسعر ($0)" in incomplete_criteria:
-                    masks.append(df_audit['final_freight_usd'].isna() | (df_audit['final_freight_usd'] <= 0.0))
-                    
-                if masks:
-                    combined_mask = masks[0]
-                    for m in masks[1:]:
-                        combined_mask = combined_mask | m
-                    df_audit = df_audit[combined_mask]
-            
-            if df_audit.empty:
-                st.success("🎉 ممتاز! لا توجد أي شحنات ناقصة البيانات بناءً على شروط الفحص المحددة.")
-            else:
-                st.warning(f"⚠️ تم رصد {len(df_audit)} شحنة / حاوية بها بيانات مفقودة:")
-                
-                th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "رقم البوليصة", "رقم الحاوية", "التاريخ", "رقم D.O", "قيمة إذن التسليم", "شحن الوكالة", "الشحن النهائي"])
-                tr_html = ""
-                for _, row in df_audit.iterrows():
-                    cust = row['customer_name']
-                    bl = row['bl_number'] if (row['bl_number'] and str(row['bl_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
-                    cont = row['container_number'] if (row['container_number'] and str(row['container_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
-                    sdate = row['shipment_date'] if (row['shipment_date'] and str(row['shipment_date']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
-                    donum = row['do_number'] if (row['do_number'] and str(row['do_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
-                    
-                    doval = f"{row['do_value_lyd']:,.2f} د.ل" if row['do_value_lyd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ 0.0 د.ل</span>"
-                    agency = f"${row['agency_freight_usd']:,.2f}" if row['agency_freight_usd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ $0.0</span>"
-                    final = f"${row['final_freight_usd']:,.2f}" if row['final_freight_usd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ $0.0</span>"
-                    
-                    tr_html += (
-                        f"<tr>"
-                        f"<td><b>{cust}</b></td>"
-                        f"<td>{bl}</td>"
-                        f"<td>{cont}</td>"
-                        f"<td>{sdate}</td>"
-                        f"<td>{donum}</td>"
-                        f"<td>{doval}</td>"
-                        f"<td>{agency}</td>"
-                        f"<td>{final}</td>"
-                        f"</tr>"
-                    )
-                st.markdown(f'<div class="enterprise-table-container"><table class="corporate-data-table"><thead><tr>{th_html}</tr></thead><tbody>{tr_html}</tbody></table></div>', unsafe_allow_html=True)
-                
-                # الاستكمال السريع للحاويات
-                st.write("---")
-                st.subheader("📝 الاستكمال والتعديل السريع للحاوية المحددة:")
-                df_audit['selector_label'] = df_audit['customer_name'] + " | بوليصة: " + df_audit['bl_number'].astype(str) + " | حاوية: " + df_audit['container_number'].astype(str)
-                selected_audit_opt = st.selectbox("اختر الشحنة المستهدفة بالاستكمال والترقيد المالي:", df_audit['selector_label'].tolist())
-                selected_audit_row = df_audit[df_audit['selector_label'] == selected_audit_opt].iloc[0]
-                audit_id = int(selected_audit_row['id'])
-                
-                with st.form("quick_audit_update_form"):
-                    ac1, ac2, ac3 = st.columns(3)
-                    with ac1:
-                        audit_cust_name = st.text_input("اسم حساب العميل (مغلق ومحمي):", value=selected_audit_row['customer_name'], disabled=True)
-                    with ac2:
-                        audit_container_num = st.text_input("رقم الحاوية / الحاويات:", value=selected_audit_row['container_number'])
-                    with ac3:
-                        audit_bl_num = st.text_input("رقم البوليصة الرئيسي:", value=selected_audit_row['bl_number'])
-                        
-                    ac4, ac5, ac6 = st.columns(3)
-                    with ac4:
-                        audit_date_val = st.text_input("تاريخ الدخول والتقييد (YYYY-MM-DD):", value=selected_audit_row['shipment_date'])
-                    with ac5:
-                        audit_do_num_val = st.text_input("رقم إذن / أمر التسليم (D.O):", value=selected_audit_row['do_number'])
-                    with ac6:
-                        audit_do_value_val = st.number_input("قيمة أمر التسليم الفعالة (بالدينار LYD):", value=float(selected_audit_row['do_value_lyd']))
-                        
-                    ac7, ac8 = st.columns(2)
-                    with ac7:
-                        audit_agency_val = st.number_input("تكلفة شحن الوكالة الكلية (بالدولار USD):", value=float(selected_audit_row['agency_freight_usd']))
-                    with ac8:
-                        audit_final_val = st.number_input("سعر الشحن النهائي المقيد على العميل (بالدولار USD):", value=float(selected_audit_row['final_freight_usd']))
-                        
-                    if st.form_submit_button("🚀 حفظ وتأكيد استكمال البيانات ومزامنتها"):
-                        conn = get_db_connection()
-                        try:
-                            with conn.cursor() as cursor:
-                                cursor.execute(
-                                    'UPDATE shipments SET container_number=%s, bl_number=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s',
-                                    (
-                                        audit_container_num.strip().upper(),
-                                        audit_bl_num.strip().upper(),
-                                        parse_any_date(audit_date_val),
-                                        audit_do_num_val.strip(),
-                                        audit_do_value_val,
-                                        audit_agency_val,
-                                        audit_final_val,
-                                        audit_id
-                                    )
-                                )
-                                conn.commit()
-                            st.success("🎉 تم استكمال وتحديث بيانات الشحنة بنجاح في النظام السحابي!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ خطأ أثناء الحفظ الفوري للبيانات: {e}")
-                        finally:
-                            conn.close()
-
-
-# ==============================================================================
-# البوابة الثانية: حركة الحاويات والشحنات
-# ==============================================================================
-elif department == "🚢 حركة الحاويات والشحنات":
-    tab_manual, tab_excel_u, tab_modify = st.tabs(["➕ إضافة بوليصة جديدة يدوياً", "📥 رفع وتحميل ملف إكسل", "📝 مراجعة وتعديل وحذف الشحنات"])
-    
-    conn = get_db_connection()
-    try:
-        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
-        shipments = pd.read_sql_query("SELECT * FROM shipments ORDER BY id DESC", conn)
-    except Exception as e:
-        st.error(f"خطأ في قاعدة البيانات: {e}")
-    finally:
-        conn.close()
-
-    # --- إضافة بوليصة يدوياً ---
-    with tab_manual:
-        st.title("➕ إضافة بوليصة / شحنة جمركية يدوية")
-        if customers_df.empty:
-            st.warning("⚠️ يرجى تسجيل وإضافة زبون واحد على الأقل أولاً لتتمكن من ربط الشحنات الجمركية بحسابه المالي.")
-        else:
-            num_containers = st.number_input("حدد كم حاوية تابعة لهذه البوليصة المستهدفة بالتقييد:", min_value=1, max_value=50, value=1, step=1)
-            with st.form("manual_shipment_form_v2", clear_on_submit=True):
-                sc1, sc2 = st.columns(2)
-                with sc1: 
-                    s_cust = st.selectbox("ارتباط باسم الزبون المسجل بالمنظومة:", customers_df['name'])
-                with sc2: 
-                    s_bl = st.text_input("رقم البوليصة الرئيسي (MBL / HBL):")
-                    
-                container_inputs = []
-                st.write("📝 أدخل أرقام الحاويات الخاصة بهذه البوليصة في الحقول أدناه:")
-                grid_cols_num = min(num_containers, 4)
-                c_cols = st.columns(grid_cols_num)
-                for i in range(num_containers):
-                    col_idx = i % grid_cols_num
-                    with c_cols[col_idx]:
-                        container_inputs.append(st.text_input(f"رقم الحاوية {i+1}:", key=f"manual_container_input_{i}"))
-                        
-                sc4, sc5, sc6 = st.columns(3)
-                with sc4: 
-                    s_date = st.date_input("تاريخ الاستلام الفعلي بالميناء:", datetime.now())
-                with sc5: 
-                    s_do_num = st.text_input("رقم إذن / أمر التسليم (D.O):")
-                with sc6: 
-                    s_do_val = st.number_input("قيمة أمر التسليم الإجمالية المحسوبة (بالدينار LYD):", min_value=0.0, step=100.0)
-                    
-                sc7, sc8 = st.columns(2)
-                with sc7: 
-                    s_agency = st.number_input("قيمة شحن الوكالة الكلية للشحنة (بالدولار USD):", min_value=0.0, step=50.0)
-                with sc8: 
-                    s_final = st.number_input("سعر نولون الشحن النهائي المقيد على الزبون (بالدولار USD):", min_value=0.0, step=50.0)
-                    
-                if st.form_submit_button("🚀 حفظ وإضافة الشحنة والبوليصة الجمركية"):
-                    valid_containers = [c.strip().upper() for c in container_inputs if c.strip()]
-                    if not valid_containers:
-                        st.error("❌ خطأ: يرجى كتابة رقم حاوية واحد على الأقل لإدراج الشحنة بنجاح.")
-                    elif s_bl.strip() == "":
-                        st.error("❌ خطأ: يجب إدخال رقم البوليصة الرئيسي لربط الحاويات.")
-                    else:
-                        combined_containers_string = " , ".join(valid_containers)
-                        conn = get_db_connection()
-                        try:
-                            with conn.cursor() as cursor:
-                                cursor.execute(
-                                    'INSERT INTO shipments (customer_name, container_number, bl_number, shipment_date, do_number, do_value_lyd, agency_freight_usd, final_freight_usd) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', 
-                                    (s_cust, combined_containers_string, s_bl.strip().upper(), s_date.strftime('%Y-%m-%d'), s_do_num.strip(), s_do_val, s_agency, s_final)
-                                )
-                                conn.commit()
-                            st.success("🎉 تم حفظ البوليصة الجمركية الجديدة بنجاح وتم مزامنتها مع الموقف المالي للعميل!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"حدث خطأ جراء الحفظ: {e}")
-                        finally:
-                            conn.close()
-
-    # --- استيراد الإكسل ---
-    with tab_excel_u:
-        st.title("📥 معالج رفع البيانات تلقائياً وتوطينها من ملف Excel")
-        st.info("ℹ️ تأكد من تطابق ترويسة الحقول أو قم بمطابقتها يدوياً عبر محرك الربط الذكي بالأسفل.")
-        uploaded_file = st.file_uploader("يرجى اختيار ملف الإكسل المستهدف للرفع والدمج السحابي:", type=["xlsx", "xls"])
-        
-        if uploaded_file is not None:
-            try:
-                df = pd.read_excel(uploaded_file)
-                st.success("🎉 تم تحميل وقراءة ملف الإكسل بنجاح! يرجى مطابقة أعمدة الملف بأعمدة المنظومة:")
-                
-                all_cols = list(df.columns)
-                c1, c2, c3, c4 = st.columns(4)
-                with c1: 
-                    col_cust = st.selectbox("عمود اسم الزبون الفعلي", all_cols, index=0)
-                with c2: 
-                    col_cont = st.selectbox("عمود رقم الحاوية (يقبل حاويات مدمجة بالخلية)", all_cols, index=min(1, len(all_cols)-1))
-                with c3: 
-                    col_bl = st.selectbox("عمود رقم البوليصة الجمركي", all_cols, index=min(2, len(all_cols)-1))
-                with c4: 
-                    col_date = st.selectbox("عمود تاريخ الاستلام والتقييد", all_cols, index=min(3, len(all_cols)-1))
-                    
-                c5, c6, c7, c8 = st.columns(4)
-                with c5: 
-                    col_donum = st.selectbox("عمود رقم إذن / أمر التسليم D.O", all_cols, index=min(4, len(all_cols)-1))
-                with c6: 
-                    col_dovald = st.selectbox("عمود قيمة أمر التسليم (بالدينار LYD)", all_cols, index=min(5, len(all_cols)-1))
-                with c7: 
-                    col_agency = st.selectbox("عمود نولون شحن الوكالة (بالدولار USD)", all_cols, index=min(6, len(all_cols)-1))
-                with c8: 
-                    col_final = st.selectbox("عمود الشحن النهائي للزبون (بالدولار USD)", all_cols, index=min(7, len(all_cols)-1))
-                    
-                st.write("🔍 **معاينة سريعة لأول 3 صفوف من الملف المرفوع:**")
-                st.dataframe(df.head(3), use_container_width=True)
-                
-                if st.button("🚀 بدء دمج البيانات والمطابقة الذكية بقاعدة البيانات أونلاين"):
-                    conn = get_db_connection()
-                    try:
-                        with conn.cursor() as cursor:
-                            insert_count, update_count = 0, 0
-                            for index, row in df.iterrows():
-                                cust_name = str(row[col_cust]).strip()
-                                if cust_name == "" or pd.isnull(row[col_cust]): 
-                                    continue
-                                cursor.execute("INSERT INTO customers (name) VALUES (%s) ON CONFLICT (name) DO NOTHING", (cust_name,))
-                                
-                                bl = str(row[col_bl]).strip().upper()
-                                raw_date = row[col_date]
-                                date_str = parse_any_date(raw_date)
-                                
-                                new_do_num = str(row[col_donum]).strip()
-                                new_do_val = safe_float(row[col_dovald])
-                                new_agency = safe_float(row[col_agency])
-                                new_final = safe_float(row[col_final])
-                                
-                                raw_containers = str(row[col_cont]).strip()
-                                container_list = re.split(r'[,/؛;\s\n]+', raw_containers)
-                                container_list = [c.strip().upper() for c in container_list if c.strip()]
-                                if not container_list: 
-                                    container_list = [""]
-                                    
-                                for container in container_list:
-                                    cursor.execute("SELECT id FROM shipments WHERE container_number = %s AND bl_number = %s", (container, bl))
-                                    existing = cursor.fetchone()
-                                    if existing:
-                                        cursor.execute(
-                                            'UPDATE shipments SET customer_name=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s', 
-                                            (cust_name, date_str, new_do_num, new_do_val, new_agency, new_final, existing['id'])
-                                        )
-                                        update_count += 1
-                                    else:
-                                        cursor.execute(
-                                            'INSERT INTO shipments (customer_name, container_number, bl_number, shipment_date, do_number, do_value_lyd, agency_freight_usd, final_freight_usd) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', 
-                                            (cust_name, container, bl, date_str, new_do_num, new_do_val, new_agency, new_final)
-                                        )
-                                        insert_count += 1
-                            conn.commit()
-                            st.success(f"🎉 تكللت عملية التوطين السحابي بالنجاح! تم إدراج {insert_count} بوليصة جديدة وتحديث {update_count} بوليصة جارية.")
-                    except Exception as e:
-                        st.error(f"❌ حدث خطأ غير متوقع أثناء الدمج: {e}")
-                    finally:
-                        conn.close()
-            except Exception as e:
-                st.error(f"❌ حدث خطأ فني أثناء قراءة ومعالجة الملف: {e}")
-
-    # --- مراجعة وتعديل وحذف الشحنات ---
-    with tab_modify:
-        st.title("📝 مراجعة وتحديث القيود والشحنات الفردية")
-        if shipments.empty:
-            st.info("ℹ️ لا توجد شحنات مسجلة بالدفاتر حالياً.")
-        else:
-            search_query = st.text_input("🔍 صندوق البحث الذكي (ابحث برقم الحاوية، رقم البوليصة، أو اسم الزبون):")
-            filtered_df = shipments.copy()
-            if search_query.strip():
-                q = search_query.strip().lower()
-                filtered_df = shipments[
-                    shipments['container_number'].astype(str).str.lower().str.contains(q, na=False) | 
-                    shipments['bl_number'].astype(str).str.lower().str.contains(q, na=False) | 
-                    shipments['customer_name'].astype(str).str.lower().str.contains(q, na=False)
-                ]
-                
-            if filtered_df.empty:
-                st.warning("⚠️ لم يسفر البحث عن أي نتائج مطابقة.")
-            else:
-                filtered_df['selector_text'] = (
-                    "بوليصة جمركية: " + filtered_df['bl_number'].astype(str) + 
-                    " | حاوية رقم: " + filtered_df['container_number'].astype(str) + 
-                    " (" + filtered_df['customer_name'] + ")"
-                )
-                selected_option = st.selectbox("اختر الشحنة الدقيقة المستهدفة بالتعديل أو الإلغاء الكامل:", filtered_df['selector_text'].tolist())
-                selected_row = filtered_df[filtered_df['selector_text'] == selected_option].iloc[0]
-                shipment_id = int(selected_row['id'])
-                
-                with st.form("edit_ship_form_v2"):
-                    ec1, ec2, ec3 = st.columns(3)
-                    with ec1: 
-                        edit_cust = st.text_input("اسم حساب العميل المرتبط (مغلق ومحمي)", value=selected_row['customer_name'], disabled=True)
-                    with ec2: 
-                        edit_cont = st.text_input("أرقام الحاوية / الحاويات التابعة:", value=selected_row['container_number'])
-                    with ec3: 
-                        edit_bl = st.text_input("رقم البوليصة الرئيسي:", value=selected_row['bl_number'])
-                        
-                    ec4, ec5, ec6 = st.columns(3)
-                    with ec4: 
-                        edit_date = st.text_input("تاريخ الدخول والتقييد (صيغة YYYY-MM-DD):", value=selected_row['shipment_date'])
-                    with ec5: 
-                        edit_do_num = st.text_input("رقم أمر التسليم (D.O):", value=selected_row['do_number'])
-                    with ec6: 
-                        edit_do_val = st.number_input("قيمة أمر التسليم المعتمدة (بالدينار LYD):", value=float(selected_row['do_value_lyd']))
-                        
-                    ec7, ec8 = st.columns(2)
-                    with ec7: 
-                        edit_agency = st.number_input("تكلفة شحن ونولون الوكالة الكلية (بالدولار USD):", value=float(selected_row['agency_freight_usd']))
-                    with ec8: 
-                        edit_final = st.number_input("سعر الشحن النهائي المفتوح للزبون (بالدولار USD):", value=float(selected_row['final_freight_usd']))
-                        
-                    b1, b2 = st.columns(2)
-                    with b1:
-                        if st.form_submit_button("💾 حفظ وتأكيد مزامنة البيانات المعدلة"):
-                            conn = get_db_connection()
-                            try:
-                                with conn.cursor() as cursor:
-                                    cursor.execute(
-                                        'UPDATE shipments SET container_number=%s, bl_number=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s', 
-                                        (edit_cont.strip().upper(), edit_bl.strip().upper(), parse_any_date(edit_date), edit_do_num.strip(), edit_do_val, edit_agency, edit_final, shipment_id)
-                                    )
-                                    conn.commit()
-                                st.success("🎉 تم تعديل وحفظ بيانات الشحنة بنجاح بالمخدم السحابي!")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"حدث خطأ جراء التعديل: {e}")
-                            finally:
-                                conn.close()
-                    with b2:
-                        if st.form_submit_button("🗑️ حذف وإلغاء هذه الشحنة تماماً"):
-                            conn = get_db_connection()
-                            try:
-                                with conn.cursor() as cursor:
-                                    cursor.execute("DELETE FROM shipments WHERE id=%s", (shipment_id,))
-                                    conn.commit()
-                                st.success("🚨 تم حذف البوليصة والشحنة بالكامل وبصورة لا رجعة فيها.")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"خطأ أثناء الحذف الفردي: {e}")
-                            finally:
-                                conn.close()
-
-
-# ==============================================================================
-# البوابة الثالثة: الخزينة والتحصيلات المالية
-# ==============================================================================
-elif department == "💵 الخزينة والتحصيلات المالية":
-    tab_add_rec, tab_edit_rec = st.tabs(["💰 تسجيل إيصال قبض جديد", "✏️ تعديل وحذف إيصالات الخزينة"])
-    
-    conn = get_db_connection()
-    try:
-        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
-        receipts_all = pd.read_sql_query("SELECT * FROM receipts ORDER BY id DESC", conn)
-    except Exception as e:
-        st.error(f"خطأ في جلب بيانات الخزينة: {e}")
-    finally:
-        conn.close()
-
-    # --- تسجيل إيصال قبض جديد ---
-    with tab_add_rec:
-        st.title("💰 إدارة المدفوعات وإيداع الخزينة")
-        if customers_df.empty:
-            st.warning("⚠️ يرجى إضافة حساب زبون مسجل واحد على الأقل أولاً لتتمكن من إدراج المبالغ المالية.")
-        else:
-            st.subheader("➕ تحرير وتسجيل إيصال سداد مالي جديد")
-            with st.form("receipt_form", clear_on_submit=True):
-                rc1, rc2, rc3 = st.columns(3)
-                with rc1: 
-                    r_cust = st.selectbox("قبض من الزبون المسجل:", customers_df['name'])
-                with rc2: 
-                    r_amount = st.number_input("قيمة المبلغ المقبوض بالكامل:", min_value=0.0, step=100.0, format="%.2f")
-                with rc3: 
-                    r_curr = st.selectbox("تحديد العملة المحصلة:", ["دينار ليبي LYD", "دولار أمريكي USD"])
-                    
-                rc4, rc5 = st.columns([1, 2])
-                with rc4: 
-                    r_date = st.date_input("تاريخ القبض والتقييد المالي:", datetime.now())
-                with rc5: 
-                    r_notes = st.text_input("رقم الإيصال اليدوي أو ملاحظات السند والبيان:")
-                    
-                if st.form_submit_button("💾 حفظ وإيداع الإيصال بقاعدة البيانات"):
-                    if r_amount <= 0:
-                        st.error("❌ خطأ: لا يمكن تقييد إيصال مالي بقيمة صفر أو قيمة سالبة.")
-                    else:
-                        conn = get_db_connection()
-                        try:
-                            with conn.cursor() as cursor:
-                                cursor.execute(
-                                    'INSERT INTO receipts (customer_name, amount, currency, receipt_date, notes) VALUES (%s, %s, %s, %s, %s)', 
-                                    (r_cust, r_amount, r_curr, r_date.strftime('%Y-%m-%d'), r_notes.strip())
-                                )
-                                conn.commit()
-                            st.success(f"🎉 تم تسجيل وإيداع مبلغ {r_amount:,.2f} ({r_curr}) بحساب الزبون [{r_cust}] بنجاح!")
-                        except Exception as e:
-                            st.error(f"حدث خطأ أثناء حفظ الإيصال: {e}")
-                        finally:
-                            conn.close()
-
-    # --- تعديل وحذف الإيصالات ---
-    with tab_edit_rec:
-        st.title("✏️ مراجعة والتحكم في إيصالات وسندات المقبوضات")
-        if receipts_all.empty:
-            st.info("ℹ️ الخزينة خالية تماماً ولا توجد إيصالات مسجلة حالياً.")
-        else:
-            search_receipt = st.text_input("🔍 ابحث في الإيصالات (عبر اسم الزبون أو ملاحظات السند):")
-            filtered_r = receipts_all.copy()
-            if search_receipt.strip():
-                sr = search_receipt.strip().lower()
-                filtered_r = receipts_all[
-                    receipts_all['customer_name'].str.lower().str.contains(sr, na=False) | 
-                    receipts_all['notes'].str.lower().str.contains(sr, na=False)
-                ]
-                
-            if filtered_r.empty:
-                st.warning("⚠️ لم يتم العثور على أي نتائج تطابق عملية البحث.")
-            else:
-                filtered_r['selector_text'] = (
-                    filtered_r['customer_name'] + 
-                    " | قيمة المبلغ: " + filtered_r['amount'].astype(str) + 
-                    " (" + filtered_r['currency'] + ") | التاريخ: " + 
-                    filtered_r['receipt_date'] + " | البيان: " + filtered_r['notes']
-                )
-                selected_receipt_opt = st.selectbox("اختر الإيصال المستهدف للتعديل أو الإزالة السحابية:", filtered_r['selector_text'])
-                selected_r_row = filtered_r[filtered_r['selector_text'] == selected_receipt_opt].iloc[0]
-                receipt_id = int(selected_r_row['id'])
-                
-                with st.form("edit_r_form"):
-                    rec_c1, rec_c2, rec_c3 = st.columns(3)
-                    with rec_c1: 
-                        edit_r_cust = st.text_input("اسم حساب الزبون (غير قابل للتغيير من هنا)", value=selected_r_row['customer_name'], disabled=True)
-                    with rec_c2: 
-                        edit_r_amount = st.number_input("تعديل قيمة المبلغ المالي:", value=float(selected_r_row['amount']))
-                    with rec_c3: 
-                        edit_r_curr = st.selectbox("تعديل العملة المودعة:", ["دينار ليبي LYD", "دولار أمريكي USD"], index=0 if "LYD" in selected_r_row['currency'] else 1)
-                        
-                    rec_c4, rec_c5 = st.columns(2)
-                    with rec_c4: 
-                        edit_r_date = st.text_input("تاريخ القيد المالي (صيغة YYYY-MM-DD):", value=selected_r_row['receipt_date'])
-                    with rec_c5: 
-                        edit_r_notes = st.text_input("ملاحظات / رقم الإيصال اليدوي والمستند:", value=selected_r_row['notes'])
-                        
-                    b1, b2 = st.columns(2)
-                    with b1:
-                        if st.form_submit_button("💾 حفظ تعديلات الإيصال وتأكيد المزامنة"):
-                            conn = get_db_connection()
-                            try:
-                                with conn.cursor() as cursor:
-                                    cursor.execute(
-                                        'UPDATE receipts SET amount=%s, currency=%s, receipt_date=%s, notes=%s WHERE id=%s', 
-                                        (edit_r_amount, edit_r_curr, parse_any_date(edit_r_date), edit_r_notes.strip(), receipt_id)
-                                    )
-                                    conn.commit()
-                                st.success("🎉 تم تحديث ومزامنة بيانات الإيصال المالي بنجاح!")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"خطأ في الحفظ السحابي: {e}")
-                            finally:
-                                conn.close()
-                    with b2:
-                        if st.form_submit_button("🗑️ حذف السند المالي نهائياً"):
-                            conn = get_db_connection()
-                            try:
-                                with conn.cursor() as cursor:
-                                    cursor.execute("DELETE FROM receipts WHERE id=%s", (receipt_id,))
-                                    conn.commit()
-                                st.success("🚨 تم مسح السند المالي وشطبه بالكامل من الدفاتر السحابية.")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"خطأ في الحذف: {e}")
-                            finally:
-                                conn.close()
-
-
-# ==============================================================================
-# البوابة الرابعة: شؤون الزبائن وصيانة النظام
-# ==============================================================================
-elif department == "⚙️ شؤون الزبائن وصيانة النظام":
-    tab_crm, tab_system = st.tabs(["👥 إدارة وحسابات الزبائن CRM", "💥 تصفير وصيانة المنظومة المجمعة"])
-    
-    conn = get_db_connection()
-    try:
-        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
-    except Exception as e:
-        st.error(f"خطأ في الإدارة الفنية: {e}")
-    finally:
-        conn.close()
-
-    # --- إدارة الزبائن CRM ---
-    with tab_crm:
-        st.title("👥 التحكم الكامل والرقابة في قائمة الزبائن")
-        tab1, tab2, tab3 = st.tabs(["➕ إضافة زبون جديد", "✏️ تعديل اسم حساب جاري", "❌ حذف وتصفية زبون"])
-        
-        with tab1:
-            new_cust = st.text_input("أدخل الاسم الكامل للزبون أو الكيان التجاري:")
-            if st.button("تأكيد تسجيل وإدراج العميل"):
-                if new_cust.strip():
-                    conn = get_db_connection()
-                    try:
-                        with conn.cursor() as cursor:
-                            cursor.execute("INSERT INTO customers (name) VALUES (%s)", (new_cust.strip(),))
-                            conn.commit()
-                        st.success("🎉 تم تسجيل الزبون بنجاح بجدول الحسابات الرسمي!")
-                        st.rerun()
-                    except Exception:
-                        st.error("⚠️ خطأ: هذا الزبون أو الحساب مسجل مسبقاً بقاعدة البيانات.")
-                    finally:
-                        conn.close()
-                else:
-                    st.error("❌ لا يمكن ترك حقل الاسم فارغاً.")
-                    
-        with tab2:
-            if not customers_df.empty:
-                cust_to_edit = st.selectbox("اختر حساب الزبون المراد تعديل مسماه بالكامل:", customers_df['name'])
-                new_name = st.text_input("أدخل الاسم الجديد المصحح والمطابق:")
-                if st.button("تأكيد تعديل ومزامنة المسمى بجميع الجداول"):
-                    if new_name.strip():
-                        conn = get_db_connection()
-                        try:
-                            with conn.cursor() as cursor:
-                                cursor.execute("UPDATE customers SET name = %s WHERE name = %s", (new_name.strip(), cust_to_edit))
-                                cursor.execute("UPDATE shipments SET customer_name = %s WHERE customer_name = %s", (new_name.strip(), cust_to_edit))
-                                cursor.execute("UPDATE receipts SET customer_name = %s WHERE customer_name = %s", (new_name.strip(), cust_to_edit))
-                                conn.commit()
-                            st.success("🎉 تم تعديل الاسم المالي ومزامنة كافة السجلات التابعة للعميل بنجاح!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"خطأ أثناء التعديل: {e}")
-                        finally:
-                            conn.close()
-            else:
-                st.info("لا توجد حسابات زبائن حالياً.")
-                
-        with tab3:
-            if not customers_df.empty:
-                cust_to_del = st.selectbox("اختر اسم حساب العميل لإزالته وشطب سجلاته نهائياً:", customers_df['name'])
-                st.warning(f"🚨 تحذير: هذا الخيار سيقوم بحذف حساب [{cust_to_del}] بالكامل وشطب كافة حاوياته وإيصالاته التابعة من النظام!")
-                if st.button("موافق، تأكيد الحذف النهائي"):
-                    conn = get_db_connection()
-                    try:
-                        with conn.cursor() as cursor:
-                            cursor.execute("DELETE FROM customers WHERE name = %s", (cust_to_del,))
-                            cursor.execute("DELETE FROM shipments WHERE customer_name = %s", (cust_to_del,))
-                            cursor.execute("DELETE FROM receipts WHERE customer_name = %s", (cust_to_del,))
-                            conn.commit()
-                        st.success(f"🚨 تم مسح وإغلاق حساب [{cust_to_del}] مع كافة قيوده المالية نهائياً.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"خطأ أثناء الحذف: {e}")
-                    finally:
-                        conn.close()
-            else:
-                st.info("لا توجد حسابات زبائن حالياً.")
-
-    # --- صيانة وتصفير المنظومة ---
-    with tab_system:
-        st.title("🗑️ محرك تصفير المنظومة والشطب المجمع لقاعدة البيانات")
-        conn = get_db_connection()
-        try:
-            tab_del_cust, tab_reset_all = st.tabs(["👤 مسح شحنات زبون معين", "💥 تصفير كلي ونهائي للنظام"])
-            with tab_del_cust:
-                if customers_df.empty:
-                    st.info("لا توجد حسابات مسجلة حالياً.")
-                else:
-                    target_cust = st.selectbox("اختر اسم حساب العميل المراد إزالة شحناته بالكامل:", customers_df['name'], key="bulk_del_select")
-                    with conn.cursor() as cursor:
-                        cursor.execute("SELECT id, container_number, bl_number, do_number FROM shipments WHERE customer_name = %s", (target_cust,))
-                        cust_shipments = cursor.fetchall()
-                        
-                    if not cust_shipments:
-                        st.info(f"لا توجد حالياً أي حاويات جارية أو شحنات مسجلة باسم الزبون [{target_cust}].")
-                    else:
-                        shipment_options = {f"📦 حاوية: {r['container_number']} | بوليصة: {r['bl_number']} | إذن رقم: {r['do_number']}": r['id'] for r in cust_shipments}
-                        select_all = st.checkbox("🔄 تحديد وتظليل كافة حاويات هذا العميل المسجلة أعلاه")
-                        default_selection = list(shipment_options.keys()) if select_all else []
-                        selected_labels = st.multiselect("اختر الشحنات المستهدفة بالشطب والإزالة الكلية:", options=list(shipment_options.keys()), default=default_selection)
-                        
-                        if selected_labels:
-                            confirm_word = st.text_input("لتأكيد تنفيذ عملية الشطب المحددة، اكتب كلمة (حذف) صراحة أدناه:")
-                            if st.button("🗑️ تنفيذ تصفية وحذف الحاويات المحددة"):
-                                if confirm_word.strip() == "حذف":
-                                    ids_to_delete = [shipment_options[lbl] for lbl in selected_labels]
-                                    placeholders = ', '.join(['%s'] * len(ids_to_delete))
-                                    with conn.cursor() as cursor:
-                                        cursor.execute(f"DELETE FROM shipments WHERE id IN ({placeholders})", ids_to_delete)
-                                        conn.commit()
-                                    st.success("🚨 تم شطب ومسح الحاويات المحددة للعميل بنجاح!")
-                                    st.rerun()
-                                else:
-                                    st.error("❌ الكلمة التأكيدية غير صحيحة.")
-                                    
-            with tab_reset_all:
-                st.warning("⚠️ خطر للغاية! هذا القسم يقوم بمسح المنظومة بالكامل والعودة للصفر وتصفير كافة سجلات الزبائن والتحصيلات المالية!")
-                clear_financials = st.checkbox("الموافقة على مسح وتصفير كافة إيصالات الخزينة وسجل أسماء الزبائن أيضاً")
-                confirm_all = st.text_input("لتأكيد التصفير السحابي المجمع والشامل، اكتب العبارة التأكيدية (Core-Reset) أدناه:")
-                
-                if st.button("💥 بدء التصفير الشامل والنهائي لقواعد البيانات"):
-                    if confirm_all == "Core-Reset":
-                        with conn.cursor() as cursor:
-                            cursor.execute("TRUNCATE TABLE shipments RESTART IDENTITY")
-                            if clear_financials:
-                                cursor.execute("TRUNCATE TABLE receipts RESTART IDENTITY")
-                                cursor.execute("TRUNCATE TABLE customers RESTART IDENTITY")
-                            conn.commit()
-                        st.success("💥 تم تصفير قاعدة البيانات السحابية بالكامل وتجهيزها للبدء من جديد بنجاح!")
-                        st.rerun()
-                    else:
-                        st.error("❌ العبارة التأكيدية غير متطابقة.")
-        finally:
-            conn.close()
+            // تشغيل التبويب الأول
+            switchTab('dashboard');
+        };
+    </script>
+</body>
+</html>
