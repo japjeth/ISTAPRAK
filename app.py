@@ -442,7 +442,7 @@ menu = st.sidebar.radio(
     "لوحة تحكم المنظومة الموحدة:", 
     [
         "📊 لوحة التحكم والتقارير", 
-        "⚠️ الشحنات متأخرة السداد", 
+        "🔍 الشحنات ناقصة البيانات", 
         "💰 إيصالات القبض والمالية", 
         "✏️ تعديل وحذف الإيصالات", 
         "➕ إضافة شحنة جديدة (يدوي/LCL)", 
@@ -565,7 +565,7 @@ if menu == "📊 لوحة التحكم والتقارير":
                 paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum() if not receipts_all.empty else 0.0
                 paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum() if not receipts_all.empty else 0.0
                 
-                # رسم بياني توضيحي لميزان الحسابات
+                # رسم بياني توضيحي لميزان الحسابات - حل مشكلة bmode السابقة إلى barmode
                 fig = go.Figure()
                 fig.add_trace(go.Bar(
                     x=df_export_target['customer_name'], 
@@ -583,7 +583,7 @@ if menu == "📊 لوحة التحكم والتقارير":
                     title='📈 ميزان الأرصاد المعلقة والذمم المالية الجارية لكافة الزبائن معاً', 
                     template='plotly_white', 
                     font=dict(family="Cairo"), 
-                    bmode='group'
+                    barmode='group'  # تم تصحيح المشكلة الموضحة في image_93d083.png بنجاح
                 )
                 st.plotly_chart(fig, use_container_width=True)
                 
@@ -723,96 +723,185 @@ if menu == "📊 لوحة التحكم والتقارير":
 
 
 # ==============================================================================
-# القسم الثاني: رصد أعمار الديون والشحنات المتأخرة
+# القسم الثاني: محرك حصر ومتابعة الشحنات ناقصة البيانات (البديل المطور لأعمار الديون)
 # ==============================================================================
-elif menu == "⚠️ الشحنات متأخرة السداد":
-    st.title("⚠️ محرك رصد أعمار الديون والشحنات المتأخرة (Aging Balances)")
+elif menu == "🔍 الشحنات ناقصة البيانات":
+    st.title("🔍 محرك حصر ومتابعة الشحنات ناقصة البيانات (Data Auditor)")
+    st.markdown("يساعدك هذا القسم في فلترة وتحديد كافة بوالص الحاويات التي تفتقر لمعلومات أساسية مثل (التواريخ، أرقام البوالص، قيم الشحن، أرقام الحاويات) لتسهيل استكمالها.")
     
     conn = get_db_connection()
     try:
-        shipments_all = pd.read_sql_query("SELECT * FROM shipments", conn)
-        receipts_all = pd.read_sql_query("SELECT * FROM receipts", conn)
+        customers_df = pd.read_sql_query("SELECT * FROM customers ORDER BY name ASC", conn)
+        shipments_all = pd.read_sql_query("SELECT * FROM shipments ORDER BY id DESC", conn)
     except Exception as e:
         st.error(f"خطأ في جلب البيانات: {e}")
     finally:
         conn.close()
         
     if shipments_all.empty:
-        st.success("🎉 لا توجد حاويات أو شحنات مسجلة حالياً.")
+        st.success("🎉 قاعدة البيانات خالية تماماً من الشحنات حالياً.")
     else:
-        overdue_records = []
-        current_date = datetime.now()
+        # لوحة الفرز والتدقيق الذكي
+        with st.expander("⚙️ محدد شروط تدقيق وفحص البيانات الناقصة", expanded=True):
+            fc1, fc2 = st.columns([1, 2])
+            with fc1:
+                selected_cust_filter = st.selectbox("تصفية لزبون محدد:", ["كل زبائن المنظومة"] + customers_df['name'].tolist())
+            with fc2:
+                incomplete_criteria = st.multiselect(
+                    "اختر النواقص التي ترغب في حصرها:",
+                    [
+                        "رقم الحاوية مفقود / فارغ",
+                        "رقم البوليصة مفقود / فارغ",
+                        "تاريخ الاستلام غير محدد",
+                        "رقم إذن التسليم (D.O) مفقود / فارغ",
+                        "قيمة أمر التسليم غير مدخلة (صفر)",
+                        "شحن الوكالة غير مسعر ($0)",
+                        "الشحن النهائي للزبون غير مسعر ($0)"
+                    ],
+                    default=[
+                        "رقم الحاوية مفقود / فارغ",
+                        "رقم البوليصة مفقود / فارغ",
+                        "قيمة أمر التسليم غير مدخلة (صفر)",
+                        "الشحن النهائي للزبون غير مسعر ($0)"
+                    ]
+                )
         
-        # تجميع سريع لحساب الأرصدة المعلقة للزبائن لتسريع محرك الفرز
-        ship_totals = shipments_all.groupby('customer_name').agg(
-            req_l=('do_value_lyd', 'sum'),
-            req_u=('final_freight_usd', 'sum')
-        ).reset_index()
-        
-        rec_lyd = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD'].groupby('customer_name')['amount'].sum().reset_index(name='paid_l') if not receipts_all.empty else pd.DataFrame(columns=['customer_name', 'paid_l'])
-        rec_usd = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD'].groupby('customer_name')['amount'].sum().reset_index(name='paid_u') if not receipts_all.empty else pd.DataFrame(columns=['customer_name', 'paid_u'])
-        
-        balances = pd.merge(ship_totals, rec_lyd, on='customer_name', how='left').fillna(0.0)
-        balances = pd.merge(balances, rec_usd, on='customer_name', how='left').fillna(0.0)
-        balances['rem_l'] = balances['req_l'] - balances['paid_l']
-        balances['rem_u'] = balances['req_u'] - balances['paid_u']
-        
-        # رصد أعمار الحاويات والشحنات الفردية المتأخرة لأكثر من 30 يوماً
-        for idx, row in shipments_all.iterrows():
-            cust = row['customer_name']
-            cust_bal = balances[balances['customer_name'] == cust]
+        # فلترة البيانات بناء على العميل أولاً
+        df_audit = shipments_all.copy()
+        if selected_cust_filter != "كل زبائن المنظومة":
+            df_audit = df_audit[df_audit['customer_name'] == selected_cust_filter]
             
-            if not cust_bal.empty:
-                rem_l = cust_bal.iloc[0]['rem_l']
-                rem_u = cust_bal.iloc[0]['rem_u']
-            else:
-                rem_l, rem_u = 0.0, 0.0
+        # تطبيق مرشحات النواقص المختارة
+        masks = []
+        if incomplete_criteria:
+            if "رقم الحاوية مفقود / فارغ" in incomplete_criteria:
+                masks.append(df_audit['container_number'].isna() | (df_audit['container_number'].astype(str).str.strip() == ""))
+            if "رقم البوليصة مفقود / فارغ" in incomplete_criteria:
+                masks.append(df_audit['bl_number'].isna() | (df_audit['bl_number'].astype(str).str.strip() == ""))
+            if "تاريخ الاستلام غير محدد" in incomplete_criteria:
+                masks.append(df_audit['shipment_date'].isna() | (df_audit['shipment_date'].astype(str).str.strip() == ""))
+            if "رقم إذن التسليم (D.O) مفقود / فارغ" in incomplete_criteria:
+                masks.append(df_audit['do_number'].isna() | (df_audit['do_number'].astype(str).str.strip() == ""))
+            if "قيمة أمر التسليم غير مدخلة (صفر)" in incomplete_criteria:
+                masks.append(df_audit['do_value_lyd'].isna() | (df_audit['do_value_lyd'] <= 0.0))
+            if "شحن الوكالة غير مسعر ($0)" in incomplete_criteria:
+                masks.append(df_audit['agency_freight_usd'].isna() | (df_audit['agency_freight_usd'] <= 0.0))
+            if "الشحن النهائي للزبون غير مسعر ($0)" in incomplete_criteria:
+                masks.append(df_audit['final_freight_usd'].isna() | (df_audit['final_freight_usd'] <= 0.0))
                 
-            # التحقق من عمر التاريخ
-            try:
-                ship_dt = datetime.strptime(parse_any_date(row['shipment_date']), "%Y-%m-%d")
-                days_passed = (current_date - ship_dt).days
-            except Exception:
-                days_passed = 0
-                
-            # إذا مرت أكثر من 30 يوماً وهناك رصيد معلق بذمة العميل
-            if days_passed > 30 and (rem_l > 10.0 or rem_u > 2.0):
-                overdue_records.append({
-                    "customer_name": cust,
-                    "bl_number": row['bl_number'],
-                    "container_number": row['container_number'],
-                    "shipment_date": row['shipment_date'],
-                    "days_aged": f"{days_passed} يوم متأخر",
-                    "remaining_lyd": f"{rem_l:,.2f} د.ل",
-                    "remaining_usd": f"${rem_u:,.2f}"
-                })
-                
-        if not overdue_records:
-            st.success("🎉 ممتاز! لا توجد حالياً أي شحنات أو حاويات معلقة تجاوزت 30 يوماً دون سداد.")
+            # دمج المرشحات باستخدام المعامل المنطقي OR لتظهر أي حاوية بها نقص واحد على الأقل
+            if masks:
+                combined_mask = masks[0]
+                for m in masks[1:]:
+                    combined_mask = combined_mask | m
+                df_audit = df_audit[combined_mask]
+        
+        if df_audit.empty:
+            st.success("🎉 ممتاز! لا توجد أي شحنات ناقصة البيانات بناءً على شروط الفحص المحددة.")
         else:
-            df_overdue = pd.DataFrame(overdue_records)
-            th = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "رقم البوليصة", "رقم الحاوية", "تاريخ الاستلام الجمركي", "فترة التأخر الجارية", "صافي رصيد الذمة (د.ل)", "صافي رصيد الذمة ($)"])
-            tr = ""
-            for _, r in df_overdue.iterrows():
-                tr += (
+            st.warning(f"⚠️ تم رصد {len(df_audit)} شحنة / حاوية ببيانات ناقصة وغير مكتملة:")
+            
+            # عرض الجدول الملون مع إبراز الأخطاء
+            th_html = "".join(f"<th>{h}</th>" for h in ["اسم الزبون", "رقم البوليصة", "رقم الحاوية", "التاريخ", "رقم D.O", "قيمة إذن التسليم", "شحن الوكالة", "الشحن النهائي"])
+            tr_html = ""
+            for _, row in df_audit.iterrows():
+                # تلوين النواقص باللون الأحمر لتنبيه المدخل
+                cust = row['customer_name']
+                bl = row['bl_number'] if (row['bl_number'] and str(row['bl_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
+                cont = row['container_number'] if (row['container_number'] and str(row['container_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
+                sdate = row['shipment_date'] if (row['shipment_date'] and str(row['shipment_date']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
+                donum = row['do_number'] if (row['do_number'] and str(row['do_number']).strip()) else "<span style='color:#ef4444; font-weight:bold;'>⚠️ ناقص</span>"
+                
+                doval = f"{row['do_value_lyd']:,.2f} د.ل" if row['do_value_lyd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ 0.0 د.ل</span>"
+                agency = f"${row['agency_freight_usd']:,.2f}" if row['agency_freight_usd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ $0.0</span>"
+                final = f"${row['final_freight_usd']:,.2f}" if row['final_freight_usd'] > 0 else "<span style='color:#ef4444; font-weight:bold;'>⚠️ $0.0</span>"
+                
+                tr_html += (
                     f"<tr>"
-                    f"<td><b>{r['customer_name']}</b></td>"
-                    f"<td>{r['bl_number']}</td>"
-                    f"<td>{r['container_number']}</td>"
-                    f"<td>{r['shipment_date']}</td>"
-                    f"<td style='color:#92400e; font-weight:bold;'>{r['days_aged']}</td>"
-                    f"<td style='color:#991b1b; font-weight:bold;'>{r['remaining_lyd']}</td>"
-                    f"<td style='color:#991b1b; font-weight:bold;'>{r['remaining_usd']}</td>"
+                    f"<td><b>{cust}</b></td>"
+                    f"<td>{bl}</td>"
+                    f"<td>{cont}</td>"
+                    f"<td>{sdate}</td>"
+                    f"<td>{donum}</td>"
+                    f"<td>{doval}</td>"
+                    f"<td>{agency}</td>"
+                    f"<td>{final}</td>"
                     f"</tr>"
                 )
+                
             st.markdown(
                 f'<div class="enterprise-table-container">'
                 f'<table class="corporate-data-table">'
-                f'<thead><tr>{th}</tr></thead>'
-                f'<tbody>{tr}</tbody>'
+                f'<thead><tr>{th_html}</tr></thead>'
+                f'<tbody>{tr_html}</tbody>'
                 f'</table></div>', 
                 unsafe_allow_html=True
             )
+            
+            # ==============================================================================
+            # محرك تعديل سريع ومباشر للحاويات ناقصة البيانات
+            # ==============================================================================
+            st.write("---")
+            st.subheader("📝 الاستكمال والتعديل السريع للحاوية المحددة:")
+            st.info("تسمح لك هذه اللوحة باختيار الشحنة الناقصة مباشرة من الجدول وتحديث معلوماتها فوراً دون تشتيت.")
+            
+            df_audit['selector_label'] = (
+                df_audit['customer_name'] + 
+                " | بوليصة: " + df_audit['bl_number'].astype(str) + 
+                " | حاوية: " + df_audit['container_number'].astype(str)
+            )
+            
+            selected_audit_opt = st.selectbox("اختر الشحنة المستهدفة بالاستكمال والترقيد المالي:", df_audit['selector_label'].tolist())
+            selected_audit_row = df_audit[df_audit['selector_label'] == selected_audit_opt].iloc[0]
+            audit_id = int(selected_audit_row['id'])
+            
+            with st.form("quick_audit_update_form"):
+                ac1, ac2, ac3 = st.columns(3)
+                with ac1:
+                    audit_cust_name = st.text_input("اسم حساب العميل (مغلق ومحمي):", value=selected_audit_row['customer_name'], disabled=True)
+                with ac2:
+                    audit_container_num = st.text_input("رقم الحاوية / الحاويات:", value=selected_audit_row['container_number'])
+                with ac3:
+                    audit_bl_num = st.text_input("رقم البوليصة الرئيسي:", value=selected_audit_row['bl_number'])
+                    
+                ac4, ac5, ac6 = st.columns(3)
+                with ac4:
+                    audit_date_val = st.text_input("تاريخ الدخول والتقييد (YYYY-MM-DD):", value=selected_audit_row['shipment_date'])
+                with ac5:
+                    audit_do_num_val = st.text_input("رقم إذن / أمر التسليم (D.O):", value=selected_audit_row['do_number'])
+                with ac6:
+                    audit_do_value_val = st.number_input("قيمة أمر التسليم الفعالة (بالدينار LYD):", value=float(selected_audit_row['do_value_lyd']))
+                    
+                ac7, ac8 = st.columns(2)
+                with ac7:
+                    audit_agency_val = st.number_input("تكلفة شحن الوكالة الكلية (بالدولار USD):", value=float(selected_audit_row['agency_freight_usd']))
+                with ac8:
+                    audit_final_val = st.number_input("سعر الشحن النهائي المقيد على العميل (بالدولار USD):", value=float(selected_audit_row['final_freight_usd']))
+                    
+                if st.form_submit_button("🚀 حفظ وتأكيد استكمال البيانات ومزامنتها"):
+                    conn = get_db_connection()
+                    try:
+                        with conn.cursor() as cursor:
+                            cursor.execute(
+                                'UPDATE shipments SET container_number=%s, bl_number=%s, shipment_date=%s, do_number=%s, do_value_lyd=%s, agency_freight_usd=%s, final_freight_usd=%s WHERE id=%s',
+                                (
+                                    audit_container_num.strip().upper(),
+                                    audit_bl_num.strip().upper(),
+                                    parse_any_date(audit_date_val),
+                                    audit_do_num_val.strip(),
+                                    audit_do_value_val,
+                                    audit_agency_val,
+                                    audit_final_val,
+                                    audit_id
+                                )
+                            )
+                            conn.commit()
+                        st.success("🎉 تم استكمال وتحديث بيانات الشحنة بنجاح في النظام السحابي!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ خطأ أثناء الحفظ الفوري للبيانات: {e}")
+                    finally:
+                        conn.close()
 
 
 # ==============================================================================
