@@ -5,8 +5,6 @@ from psycopg2.extras import DictCursor
 from datetime import datetime
 import io
 import re
-import plotly.graph_objects as go
-import plotly.express as px
 
 # ==============================================================================
 # 1. إعداد الصفحة الأساسي بنسق عريض رصين وراقٍ
@@ -161,36 +159,62 @@ div.stButton > button:hover {
 
 /* ==============================================================================
  * 📜 هيكلية الطباعة المعزولة كلياً والمضمونة (Anti-Overlap Isolation CSS)
+ * حل المشكلة الموضحة في صورة image_93eaad لضمان البدء من قمة الصفحة بالكامل وبدون تباعد
  * ============================================================================== */
 .official-print-document { display: none; }
 
 @media print {
-    /* إخفاء واجهة تطبيق ستريمليت بالكامل بطريقة التمويه المرئي المضمون */
-    body * {
-        visibility: hidden !important;
+    /* 1. إخفاء كافة عناصر ستريمليت الهيكلية ومكونات الأكواد والتحكم تماماً لمنع الحشو والتباعد */
+    header, footer, [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stElementToolbar"],
+    div.stButton, div.stForm, div.stSelectbox, div.stMultiSelect, div.stRadio, .stExpander, .print-instruction,
+    .enterprise-table-container, .analytics-container, .no-print, [data-testid="stSidebarUserContent"],
+    .kpi-container, iframe, .stTabs, div[data-testid="stMarkdownContainer"] {
+        display: none !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
     
-    /* حصر وإظهار وثيقة كشف الحساب الرسمية لوحدها فقط */
-    .official-print-document, .official-print-document * {
-        visibility: visible !important;
+    /* 2. طي وحذف مساحات السطور والكتل الرأسية الفارغة لتطبيق ستريمليت من التدفق المطبوع */
+    div[data-testid="stVerticalBlock"] > div { 
+        display: none !important; 
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     
+    /* إظهار فقط السطر الحاوي لوثيقة الطباعة الرسمية بمفرده */
+    div[data-testid="stVerticalBlock"] > div:has(.official-print-document) { 
+        display: block !important; 
+    }
+
+    /* 3. تنظيف الهوامش الخارجية للصفحة وحاوياتها لتوفير طباعة A4 محاذية للقمة بدقة */
+    [data-testid="stAppViewContainer"], .main, .block-container, [data-testid="stVerticalBlock"] {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        display: block !important;
+        overflow: visible !important;
+        height: auto !important;
+        background-color: #ffffff !important;
+    }
+
+    /* 4. تمثيل الهيدر والبادينج الرسمي لوثيقة كشف الحساب */
     .official-print-document {
         display: block !important;
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
         background-color: #ffffff !important;
         color: #000000 !important;
         padding: 10mm 10mm !important;
+        margin: 0 !important;
         direction: rtl !important;
         text-align: right !important;
+        width: 100% !important;
     }
 
     @page { 
         size: A4 portrait; 
-        margin: 15mm 10mm; 
+        margin: 0; /* تحكم كلي بالهوامش من خلال البادينج الداخلي لتفادي فجوات المتصفح */
     }
     
     .document-corporate-header {
@@ -230,20 +254,23 @@ div.stButton > button:hover {
     table.print-invoice-table th { 
         background-color: #f1f5f9 !important; 
         color: #000000 !important; 
-        border: 1px solid #475569 !important; 
+        border: 1px solid #000000 !important; 
         padding: 8px !important; 
         font-weight: bold !important; 
         text-align: right !important; 
         -webkit-print-color-adjust: exact; 
     }
     table.print-invoice-table td { 
-        border: 1px solid #cbd5e1 !important; 
+        border: 1px solid #000000 !important; 
         padding: 8px !important; 
         text-align: right !important; 
         color: #000000 !important; 
     }
     table.print-invoice-table tr { 
         page-break-inside: avoid !important; 
+    }
+    thead {
+        display: table-header-group !important; /* تكرار العناوين بالصفحات المتعددة */
     }
     
     table.print-totals-table { 
@@ -254,14 +281,14 @@ div.stButton > button:hover {
     }
     table.print-totals-table th { 
         background-color: #e2e8f0 !important; 
-        border: 1px solid #475569 !important; 
+        border: 1px solid #000000 !important; 
         padding: 10px !important; 
         font-weight: bold !important; 
         text-align: center !important; 
         -webkit-print-color-adjust: exact; 
     }
     table.print-totals-table td { 
-        border: 1px solid #cbd5e1 !important; 
+        border: 1px solid #000000 !important; 
         padding: 10px !important; 
         text-align: center !important; 
         font-weight: 700 !important; 
@@ -564,28 +591,6 @@ if menu == "📊 لوحة التحكم والتقارير":
                 req_u = shipments_all['final_freight_usd'].sum() if not shipments_all.empty else 0.0
                 paid_l = receipts_all[receipts_all['currency'] == 'دينار ليبي LYD']['amount'].sum() if not receipts_all.empty else 0.0
                 paid_u = receipts_all[receipts_all['currency'] == 'دولار أمريكي USD']['amount'].sum() if not receipts_all.empty else 0.0
-                
-                # رسم بياني توضيحي لميزان الحسابات - حل مشكلة bmode السابقة إلى barmode
-                fig = go.Figure()
-                fig.add_trace(go.Bar(
-                    x=df_export_target['customer_name'], 
-                    y=df_export_target['remaining_lyd'], 
-                    name='متبقي الدينار (د.ل)', 
-                    marker_color='#1b4332'
-                ))
-                fig.add_trace(go.Bar(
-                    x=df_export_target['customer_name'], 
-                    y=df_export_target['remaining_usd'], 
-                    name='متبقي الدولار ($)', 
-                    marker_color='#d8f3dc'
-                ))
-                fig.update_layout(
-                    title='📈 ميزان الأرصاد المعلقة والذمم المالية الجارية لكافة الزبائن معاً', 
-                    template='plotly_white', 
-                    font=dict(family="Cairo"), 
-                    barmode='group'  # تم تصحيح المشكلة الموضحة في image_93d083.png بنجاح
-                )
-                st.plotly_chart(fig, use_container_width=True)
                 
             else:
                 # كشف حساب تفصيلي للكل
